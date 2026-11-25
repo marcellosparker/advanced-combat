@@ -223,7 +223,7 @@ const Online = (() => {
       $('aGoIn').onclick = () => openAccount('in'); $('mClose').onclick = closeModal; return;
     }
     modal(`<h2>Leaderboard</h2><p>Loading…</p>`);
-    const { data, error } = await sb.from('leaderboard').select('*').order('wins', { ascending: false }).order('win_rate', { ascending: false }).order('best_score', { ascending: false, nullsFirst: false }).limit(50);
+    const { data, error } = await sb.rpc('get_leaderboard', { max_rows: 50 });
     if (error) { modal(`<h2>Leaderboard</h2><p>${esc(errText(error))}</p><div class="row"><button id="mClose">Close</button></div>`); $('mClose').onclick = closeModal; return; }
     const me = session.user.id;
     let rows = (data || []).map((r, i) => `<div class="lrow ${r.user_id === me ? 'me' : ''}"><span class="pos">${i+1}</span><span class="nm2">${esc(r.display_name)}</span>

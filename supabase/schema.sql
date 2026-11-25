@@ -66,6 +66,9 @@ create table if not exists public.feedback (
   created_at  timestamptz not null default now()
 );
 
+create index if not exists feedback_user_idx on public.feedback(user_id);
+revoke execute on function public.handle_new_user() from anon, authenticated, public;
+
 -- ---------- ROW LEVEL SECURITY ----------
 alter table public.profiles enable row level security;
 alter table public.games    enable row level security;
@@ -78,38 +81,44 @@ create policy "profiles readable by signed-in" on public.profiles
   for select to authenticated using (true);
 drop policy if exists "update own profile" on public.profiles;
 create policy "update own profile" on public.profiles
-  for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+  for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
 -- Games: you insert and read only your own. No updates or deletes from the client.
 drop policy if exists "insert own games" on public.games;
 create policy "insert own games" on public.games
-  for insert to authenticated with check (user_id = auth.uid());
+  for insert to authenticated with check (user_id = (select auth.uid()));
 drop policy if exists "read own games" on public.games;
 create policy "read own games" on public.games
-  for select to authenticated using (user_id = auth.uid());
+  for select to authenticated using (user_id = (select auth.uid()));
 
 -- Feedback: you can submit; nobody can read it from the client (you read it in the dashboard).
 drop policy if exists "submit feedback" on public.feedback;
 create policy "submit feedback" on public.feedback
-  for insert to authenticated with check (user_id = auth.uid());
+  for insert to authenticated with check (user_id = (select auth.uid()));
 
 -- ---------- LEADERBOARD ----------
--- Aggregates only; runs with the view owner's rights so it can count everyone's games
--- without exposing individual game rows.
-create or replace view public.leaderboard
-with (security_invoker = false) as
-select
-  p.id                                         as user_id,
-  p.display_name,
-  count(g.id)::int                             as games,
-  count(g.id) filter (where g.won)::int        as wins,
-  round(100.0 * count(g.id) filter (where g.won) / nullif(count(g.id), 0))::int as win_rate,
-  max(g.score) filter (where g.won)            as best_score,
-  (array_agg(g.rank_letter order by g.score desc nulls last) filter (where g.won))[1] as best_rank,
-  min(g.days) filter (where g.won)             as fastest_win
-from public.profiles p
-join public.games g on g.user_id = p.id
-group by p.id, p.display_name;
-
-revoke all on public.leaderboard from anon;
-grant select on public.leaderboard to authenticated;
+-- Aggregates only. SECURITY DEFINER so it can count everyone's games without
+-- exposing individual game rows (Supabase's advisor flags this as a WARN; it's intentional).
+drop view if exists public.leaderboard;
+create or replace function public.get_leaderboard(max_rows int default 50)
+returns table (
+  user_id uuid, display_name text, games int, wins int, win_rate int,
+  best_score int, best_rank text, fastest_win int
+)
+language sql stable security definer set search_path = '' as $$
+  select
+    p.id, p.display_name,
+    count(g.id)::int,
+    (count(g.id) filter (where g.won))::int,
+    round(100.0 * count(g.id) filter (where g.won) / nullif(count(g.id), 0))::int,
+    max(g.score) filter (where g.won),
+    (array_agg(g.rank_letter order by g.score desc nulls last) filter (where g.won))[1],
+    min(g.days) filter (where g.won)
+  from public.profiles p
+  join public.games g on g.user_id = p.id
+  group by p.id, p.display_name
+  order by 4 desc, 5 desc, 6 desc nulls last
+  limit least(greatest(coalesce(max_rows, 50), 1), 100);
+$$;
+revoke execute on function public.get_leaderboard(int) from public, anon;
+grant execute on function public.get_leaderboard(int) to authenticated;
