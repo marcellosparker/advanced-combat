@@ -1,0 +1,6 @@
+-- Advanced Combat — admin panel + usage tracking (applied 2026-11-25 as migration "admin_and_usage_tracking").
+-- Adds: events (usage log, insert-only from clients), admins (no client access), is_admin(),
+-- and admin_* read functions that raise 'not authorized' for anyone not in public.admins.
+-- To add another admin, run in the SQL editor:
+--   insert into public.admins (user_id) select id from auth.users where email = '<their email>';
+-- The full function bodies live in the Supabase project (Database → Functions); see list_migrations.

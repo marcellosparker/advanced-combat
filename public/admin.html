@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Advanced Combat · Admin</title>
+<script src="/api/config"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#121418;--surface-1:#1c1f26;--surface-2:#252932;--line:#323844;--grid:#2a2f39;
+  --text-primary:#eceef2;--text-secondary:#99a0ad;--acc:#f2c14e;
+  --series-1:#338ced;--series-2:#e76624;--series-3:#00a888;
+  --good:#0aac23;--bad:#eb6263;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text-primary);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--acc)}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+header h1{font-size:18px;margin:0;font-weight:800}
+header h1 small{color:var(--text-secondary);font-weight:600}
+.grow{flex:1}
+button,select,input{font:inherit;color:var(--text-primary);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+button{font-weight:600;cursor:pointer}
+button.pri{background:var(--acc);color:#1b1b1b;border-color:transparent}
+button:disabled{opacity:.5}
+.card{background:var(--surface-1);border:1px solid var(--line);border-radius:14px;padding:14px}
+.muted{color:var(--text-secondary)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi .lbl{color:var(--text-secondary);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi .val{font-size:26px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .sub{color:var(--text-secondary);font-size:12px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;margin-bottom:12px}
+.chart h3,.sec h3{margin:0 0 2px;font-size:15px}
+.chart .desc{color:var(--text-secondary);font-size:12px;margin-bottom:8px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-primary);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:3px;border-radius:2px;display:inline-block}
+.legend i.sq{height:10px;width:10px;border-radius:3px}
+.plot{position:relative}
+.plot svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:#0d0f12;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:2}
+.tip b{display:block;margin-bottom:2px}
+.tip .r{display:flex;align-items:center;gap:6px}
+.tip .r i{width:8px;height:8px;border-radius:50%}
+.tabs{display:flex;gap:6px;margin:4px 0 12px;flex-wrap:wrap}
+.tabs button.on{background:var(--acc);color:#1b1b1b;border-color:transparent}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.tools input{min-width:220px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;color:var(--text-secondary);font-weight:600;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.tbl th.num,.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.tbl td{padding:8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.scroll{overflow-x:auto}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:700;background:var(--surface-2);border:1px solid var(--line)}
+.pill.bug{border-color:#7a352c;color:#ffb0a4}.pill.balance{border-color:#6b5a22;color:#f2d27a}.pill.idea{border-color:#235a3a;color:#9ff0a8}
+.pill.admin{border-color:#6b5a22;color:var(--acc)}
+.fb{border-bottom:1px solid var(--grid);padding:12px 0}
+.fb:last-child{border-bottom:none}
+.fb .msg{white-space:pre-wrap;margin:6px 0}
+.fb pre{background:#0d0f12;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto;font-size:12px}
+.rk{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;font-weight:900;font-style:italic;color:#1b1b1b;background:#9aa1ad;font-size:13px}
+.rk-S{background:linear-gradient(135deg,#ffe27a,#ff8a3d)}.rk-A{background:#f2c14e}.rk-B{background:#7fe08a}.rk-C{background:#7ab8ff}
+.gate{max-width:380px;margin:12vh auto}
+.gate .form{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.gate label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.err{color:var(--bad);min-height:18px;font-size:13px}
+.hide{display:none !important}
+.empty{color:var(--text-secondary);padding:18px 0;text-align:center}
+.note{font-size:12px;color:var(--text-secondary);margin:6px 0 14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="gate" class="gate card hide">
+    <h2 style="margin:0">Admin sign in</h2>
+    <p class="muted" id="gateMsg">Sign in with an admin account.</p>
+    <div class="form" id="gateForm">
+      <label>Email<input id="gEmail" type="email" autocomplete="email"></label>
+      <label>Password<input id="gPass" type="password" autocomplete="current-password"></label>
+      <div class="err" id="gErr"></div>
+      <button class="pri" id="gGo">Sign in</button>
+    </div>
+    <p class="muted" style="font-size:12px"><a href="/">← Back to the game</a></p>
+  </div>
+
+  <div id="app" class="hide">
+    <header>
+      <h1>Advanced Combat <small>· Admin</small></h1>
+      <div class="grow"></div>
+      <span class="muted" id="who"></span>
+      <select id="range" aria-label="Date range"><option value="14">Last 14 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>
+      <button id="refresh">Refresh</button>
+      <button id="out">Sign out</button>
+    </header>
+    <div class="note" id="note"></div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="charts">
+      <div class="card chart"><h3>New players per day</h3><div class="desc">Accounts created (UTC days)</div><div class="plot" id="cSignups"></div></div>
+      <div class="card chart"><h3>Activity per day</h3><div class="desc">Visits and games, from usage tracking</div><div class="legend" id="lActivity"></div><div class="plot" id="cActivity"></div></div>
+      <div class="card chart"><h3>Active players per day</h3><div class="desc">Signed-in players who opened the game or saved a game</div><div class="plot" id="cActive"></div></div>
+    </div>
+
+    <div class="card sec">
+      <div class="tabs" id="tabs">
+        <button data-t="users" class="on">Players</button>
+        <button data-t="feedback">Feedback</button>
+        <button data-t="games">Games</button>
+        <button data-t="cos">Commanders</button>
+      </div>
+      <div id="t-users"></div>
+      <div id="t-feedback" class="hide"></div>
+      <div id="t-games" class="hide"></div>
+      <div id="t-cos" class="hide"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n == null ? '—' : Number(n).toLocaleString();
+const pct = n => n == null ? '—' : n + '%';
+const when = t => { if (!t) return '—'; const d = new Date(t), s = (Date.now() - d) / 1000;
+  if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s/60) + 'm ago'; if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  if (s < 86400*14) return Math.floor(s/86400) + 'd ago'; return d.toLocaleDateString(); };
+const CO_NAMES = {vance:'Vance', bruna:'Bruna', ash:'Ash', mira:'Mira', rook:'Rook', sable:'Sable'};
+const coName = c => CO_NAMES[c] || c;
+
+const cfg = window.AC_CONFIG || {};
+const sb = (cfg.supabaseUrl && window.supabase) ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
+let D = {};
+
+// ---------- gate ----------
+function showGate(msg, withForm){
+  $('app').classList.add('hide'); $('gate').classList.remove('hide');
+  $('gateMsg').textContent = msg; $('gateForm').classList.toggle('hide', !withForm);
+}
+$('gGo').onclick = async () => {
+  $('gErr').textContent = ''; $('gGo').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $('gEmail').value.trim(), password: $('gPass').value });
+  $('gGo').disabled = false;
+  if (error) { $('gErr').textContent = error.message; return; }
+  boot();
+};
+$('gPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('gGo').click(); });
+$('out').onclick = async () => { await sb.auth.signOut(); showGate('Signed out.', true); };
+
+async function boot(){
+  if (!sb) return showGate('The server isn’t configured for this deployment.', false);
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return showGate('Sign in with an admin account.', true);
+  const { data: ok } = await sb.rpc('is_admin');
+  if (!ok) {
+    showGate('This account doesn’t have admin access.', false);
+    $('gateMsg').insertAdjacentHTML('afterend', '<button id="gSwitch" style="margin-top:8px">Use a different account</button>');
+    $('gSwitch').onclick = async () => { await sb.auth.signOut(); $('gSwitch').remove(); showGate('Sign in with an admin account.', true); };
+    return;
+  }
+  $('gate').classList.add('hide'); $('app').classList.remove('hide');
+  $('who').textContent = data.session.user.email;
+  load();
+}
+
+// ---------- data ----------
+async function load(){
+  $('refresh').disabled = true; $('refresh').textContent = 'Loading…';
+  const days = +$('range').value;
+  const [ov, daily, users, fb, games] = await Promise.all([
+    sb.rpc('admin_overview'), sb.rpc('admin_daily', { days_back: days }), sb.rpc('admin_users'),
+    sb.rpc('admin_feedback', { max_rows: 200 }), sb.rpc('admin_games', { max_rows: 200 })
+  ]);
+  $('refresh').disabled = false; $('refresh').textContent = 'Refresh';
+  const err = [ov, daily, users, fb, games].find(r => r.error);
+  if (err) { $('note').textContent = 'Couldn’t load: ' + err.error.message; return; }
+  D = { ov: ov.data, daily: daily.data || [], users: users.data || [], fb: fb.data || [], games: games.data || {} };
+  render();
+}
+$('refresh').onclick = load;
+$('range').onchange = load;
+
+// ---------- render ----------
+function render(){
+  const o = D.ov;
+  $('note').textContent = o.tracking_since
+    ? `Usage tracking (visits, games started/finished) since ${new Date(o.tracking_since).toLocaleString()}. Saved results and accounts go back further. Updated ${new Date().toLocaleTimeString()}.`
+    : 'Usage tracking is live but has no events yet — visits and games started will appear as players open the game.';
+  const completion = o.games_started_7d ? Math.round(100 * o.games_finished_7d / o.games_started_7d) : null;
+  const tiles = [
+    ['Players', fmt(o.users_total), `${fmt(o.users_new_7d)} new · ${fmt(o.users_confirmed)} confirmed`],
+    ['Active players · 7d', fmt(o.users_active_7d), 'signed in & played or visited'],
+    ['Devices · 7d', fmt(o.devices_7d), 'incl. players not signed in'],
+    ['Visits · 7d', fmt(o.sessions_7d), 'game opened'],
+    ['Games started · 7d', fmt(o.games_started_7d), `${fmt(o.games_finished_7d)} finished · ${pct(completion)} completion`],
+    ['Saved results', fmt(o.games_saved_total), `${fmt(o.games_saved_7d)} in 7d · ${pct(o.win_rate_all)} player wins`],
+    ['Avg game length', o.avg_days_all == null ? '—' : o.avg_days_all + ' days', `${pct(o.fog_share_all)} played with fog`],
+    ['Feedback', fmt(o.feedback_total), `${fmt(o.feedback_7d)} in 7d`]
+  ];
+  $('kpis').innerHTML = tiles.map(([l, v, s]) => `<div class="card kpi"><div class="lbl">${esc(l)}</div><div class="val">${esc(v)}</div><div class="sub">${esc(s)}</div></div>`).join('');
+
+  const days = D.daily.map(d => d.day);
+  barChart($('cSignups'), days, D.daily.map(d => d.signups), 'New players', 'var(--series-1)');
+  const act = [
+    {name:'Visits', color:'var(--series-1)', values:D.daily.map(d => d.sessions)},
+    {name:'Games started', color:'var(--series-2)', values:D.daily.map(d => d.games_started)},
+    {name:'Games finished', color:'var(--series-3)', values:D.daily.map(d => d.games_finished)}
+  ];
+  $('lActivity').innerHTML = act.map(s => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('');
+  lineChart($('cActivity'), days, act);
+  lineChart($('cActive'), days, [{name:'Active players', color:'var(--series-1)', values:D.daily.map(d => d.active_users)}]);
+
+  renderUsers(); renderFeedback(); renderGames(); renderCos();
+}
+
+// ---------- charts (SVG, hover tooltips) ----------
+const CW = 560, CH = 200, PAD = {l:34, r:10, t:10, b:26};
+function niceMax(v){ if (v <= 4) return 4; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1,2,2.5,5,10]) if (m*p >= v) return m*p; return 10*p; }
+function axes(days, max, noX){
+  const iw = CW - PAD.l - PAD.r, ih = CH - PAD.t - PAD.b;
+  let g = '';
+  for (let i=0;i<=4;i++){
+    const v = max * i / 4, y = PAD.t + ih - ih * i / 4;
+    g += `<line x1="${PAD.l}" x2="${CW-PAD.r}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${PAD.l-6}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--text-secondary)">${Number.isInteger(v) ? v : v.toFixed(1)}</text>`;
+  }
+  if (noX) return g;
+  const step = Math.max(1, Math.ceil(days.length / 6));
+  days.forEach((d, i) => {
+    if (i % step && i !== days.length - 1) return;
+    const x = PAD.l + iw * (days.length === 1 ? .5 : i / (days.length - 1));
+    const lbl = new Date(d + 'T00:00:00Z').toLocaleDateString(undefined, {month:'short', day:'numeric', timeZone:'UTC'});
+    g += `<text x="${x}" y="${CH-6}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${esc(lbl)}</text>`;
+  });
+  return g;
+}
+function attachHover(el, days, xs, rowsHtml, guide){
+  const tip = document.createElement('div'); tip.className = 'tip'; el.appendChild(tip);
+  const svg = el.querySelector('svg');
+  const g = svg.querySelector('.hov');
+  const move = e => {
+    const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) * CW / r.width;
+    let i = 0, best = Infinity; xs.forEach((x, j) => { const d = Math.abs(x - sx); if (d < best){ best = d; i = j; } });
+    g.innerHTML = guide(i);
+    tip.innerHTML = `<b>${esc(new Date(days[i] + 'T00:00:00Z').toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric', timeZone:'UTC'}))}</b>` + rowsHtml(i);
+    tip.style.opacity = 1;
+    const px = xs[i] * r.width / CW;
+    tip.style.left = Math.min(Math.max(px + 12, 0), r.width - tip.offsetWidth) + 'px';
+    tip.style.top = '8px';
+  };
+  svg.addEventListener('pointermove', move);
+  svg.addEventListener('pointerleave', () => { tip.style.opacity = 0; g.innerHTML = ''; });
+}
+function lineChart(el, days, series){
+  const max = niceMax(Math.max(1, ...series.flatMap(s => s.values)));
+  const iw = CW - PAD.l - PAD.r, ih = CH - PAD.t - PAD.b;
+  const X = i => PAD.l + iw * (days.length === 1 ? .5 : i / (days.length - 1));
+  const Y = v => PAD.t + ih - ih * v / max;
+  let g = axes(days, max);
+  for (const s of series){
+    g += `<path d="${s.values.map((v,i) => (i?'L':'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const li = s.values.length - 1;
+    g += `<circle cx="${X(li)}" cy="${Y(s.values[li])}" r="4" fill="${s.color}" stroke="var(--surface-1)" stroke-width="2"/>`;
+  }
+  g += `<rect x="${PAD.l}" y="${PAD.t}" width="${iw}" height="${ih}" fill="transparent"/><g class="hov"></g>`;
+  el.innerHTML = `<svg viewBox="0 0 ${CW} ${CH}" role="img" aria-label="${esc(series.map(s => s.name).join(', '))} per day">${g}</svg>`;
+  const xs = days.map((_, i) => X(i));
+  attachHover(el, days, xs,
+    i => series.map(s => `<div class="r"><i style="background:${s.color}"></i>${esc(s.name)}: <b style="display:inline;margin:0">${fmt(s.values[i])}</b></div>`).join(''),
+    i => `<line x1="${X(i)}" x2="${X(i)}" y1="${PAD.t}" y2="${PAD.t+ih}" stroke="var(--text-secondary)" stroke-dasharray="3 3"/>` +
+         series.map(s => `<circle cx="${X(i)}" cy="${Y(s.values[i])}" r="4.5" fill="${s.color}" stroke="var(--surface-1)" stroke-width="2"/>`).join(''));
+}
+function barChart(el, days, values, name, color){
+  const max = niceMax(Math.max(1, ...values));
+  const iw = CW - PAD.l - PAD.r, ih = CH - PAD.t - PAD.b;
+  const slot = iw / days.length, bw = Math.max(2, Math.min(18, slot - 2));
+  const X = i => PAD.l + slot * i + slot / 2;
+  const Y = v => PAD.t + ih - ih * v / max;
+  let g = axes(days, max, true); // x labels placed at bar centers below
+  const step = Math.max(1, Math.ceil(days.length / 6));
+  days.forEach((d, i) => { if (i % step && i !== days.length - 1) return;
+    g += `<text x="${X(i)}" y="${CH-6}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">${esc(new Date(d + 'T00:00:00Z').toLocaleDateString(undefined, {month:'short', day:'numeric', timeZone:'UTC'}))}</text>`; });
+  values.forEach((v, i) => {
+    if (!v) return;
+    const y = Y(v), h = PAD.t + ih - y, r = Math.min(4, bw / 2, h);
+    const x0 = X(i) - bw / 2;
+    g += `<path d="M${x0} ${PAD.t+ih} V${y+r} Q${x0} ${y} ${x0+r} ${y} H${x0+bw-r} Q${x0+bw} ${y} ${x0+bw} ${y+r} V${PAD.t+ih} Z" fill="${color}"/>`;
+  });
+  g += `<rect x="${PAD.l}" y="${PAD.t}" width="${iw}" height="${ih}" fill="transparent"/><g class="hov"></g>`;
+  el.innerHTML = `<svg viewBox="0 0 ${CW} ${CH}" role="img" aria-label="${esc(name)} per day">${g}</svg>`;
+  attachHover(el, days, days.map((_, i) => X(i)),
+    i => `<div class="r"><i style="background:${color}"></i>${esc(name)}: <b style="display:inline;margin:0">${fmt(values[i])}</b></div>`,
+    i => `<rect x="${X(i) - slot/2}" y="${PAD.t}" width="${slot}" height="${ih}" fill="rgba(255,255,255,.05)"/>`);
+}
+
+// ---------- tables ----------
+function sortable(container, rows, cols, opts){
+  let key = opts.sort, dir = opts.dir || -1, q = '';
+  const draw = () => {
+    let list = rows.filter(r => !q || cols.some(c => String(c.text ? c.text(r) : r[c.k] ?? '').toLowerCase().includes(q)));
+    list.sort((a, b) => { const c = cols.find(x => x.k === key), va = c.sv ? c.sv(a) : a[key], vb = c.sv ? c.sv(b) : b[key];
+      if (va == null) return 1; if (vb == null) return -1; return (va > vb ? 1 : va < vb ? -1 : 0) * dir; });
+    container.querySelector('tbody').innerHTML = list.length ? list.map(r => '<tr>' + cols.map(c => `<td class="${c.num?'num':''}">${c.html ? c.html(r) : esc(r[c.k] ?? '—')}</td>`).join('') + '</tr>').join('')
+      : `<tr><td colspan="${cols.length}" class="empty">${esc(opts.empty || 'Nothing yet')}</td></tr>`;
+    container.querySelector('.count').textContent = `${list.length} of ${rows.length}`;
+    container.querySelectorAll('th').forEach(th => th.textContent = th.dataset.l + (th.dataset.k === key ? (dir < 0 ? ' ↓' : ' ↑') : ''));
+  };
+  container.innerHTML = `<div class="tools">${opts.search ? '<input type="search" placeholder="Search…" class="q">' : ''}<span class="muted count"></span>${opts.extra || ''}</div>
+    <div class="scroll"><table class="tbl"><thead><tr>${cols.map(c => `<th data-k="${c.k}" data-l="${esc(c.l)}" class="${c.num?'num':''}">${esc(c.l)}</th>`).join('')}</tr></thead><tbody></tbody></table></div>`;
+  container.querySelectorAll('th').forEach(th => th.onclick = () => { if (key === th.dataset.k) dir = -dir; else { key = th.dataset.k; dir = -1; } draw(); });
+  const qi = container.querySelector('.q'); if (qi) qi.oninput = () => { q = qi.value.toLowerCase().trim(); draw(); };
+  draw();
+}
+const rankBadge = r => r ? `<span class="rk rk-${esc(r)}">${esc(r)}</span>` : '—';
+function renderUsers(){
+  const cols = [
+    {k:'display_name', l:'Player', html:r => `<b>${esc(r.display_name || '—')}</b> ${r.is_admin ? '<span class="pill admin">admin</span>' : ''}<div class="muted" style="font-size:12px">${esc(r.email)}</div>`, text:r => (r.display_name||'') + ' ' + r.email},
+    {k:'created_at', l:'Joined', html:r => esc(when(r.created_at)) + (r.confirmed ? '' : ' <span class="pill">unconfirmed</span>'), sv:r => r.created_at},
+    {k:'last_seen', l:'Last seen', html:r => esc(when(r.last_seen)), sv:r => r.last_seen},
+    {k:'sessions', l:'Visits', num:1},
+    {k:'games_started', l:'Started', num:1},
+    {k:'games', l:'Saved', num:1},
+    {k:'wins', l:'Wins', num:1, html:r => `${r.wins}${r.games ? ` <span class="muted">(${Math.round(100*r.wins/r.games)}%)</span>` : ''}`},
+    {k:'best_rank', l:'Best', html:r => rankBadge(r.best_rank)},
+    {k:'feedback', l:'Feedback', num:1}
+  ];
+  sortable($('t-users'), D.users, cols, {sort:'last_seen', search:true, empty:'No players yet', extra:'<span class="grow"></span><button id="csv">Download CSV</button>'});
+  $('csv').onclick = () => {
+    const head = ['display_name','email','created_at','last_seen','confirmed','sessions','games_started','games','wins','best_rank','feedback'];
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const csv = [head.join(',')].concat(D.users.map(u => head.map(h => q(u[h])).join(','))).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'advanced-combat-players.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+}
+function renderFeedback(){
+  const el = $('t-feedback');
+  const cats = ['all','bug','balance','idea','other'];
+  let cat = 'all';
+  const draw = () => {
+    const list = D.fb.filter(f => cat === 'all' || f.category === cat);
+    el.querySelector('.list').innerHTML = list.length ? list.map((f, i) => `
+      <div class="fb"><div><span class="pill ${esc(f.category)}">${esc(f.category)}</span> <b>${esc(f.display_name || 'Unknown')}</b>
+        <span class="muted">· ${esc(f.email || '')} · ${esc(when(f.created_at))} · v${esc(f.client_version || '?')}</span></div>
+        <div class="msg">${esc(f.message)}</div>
+        <details><summary class="muted">Device & game state</summary><div class="muted" style="font-size:12px;margin:6px 0">${esc(f.user_agent || '')}</div><pre>${esc(JSON.stringify(f.context, null, 2))}</pre></details>
+      </div>`).join('') : '<div class="empty">No feedback yet.</div>';
+  };
+  el.innerHTML = `<div class="tools">${cats.map(c => `<button data-c="${c}" class="${c===cat?'pri':''}">${c[0].toUpperCase()+c.slice(1)} (${c==='all' ? D.fb.length : D.fb.filter(f => f.category===c).length})</button>`).join('')}</div><div class="list"></div>`;
+  el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { cat = b.dataset.c; el.querySelectorAll('[data-c]').forEach(x => x.classList.toggle('pri', x === b)); draw(); });
+  draw();
+}
+function renderGames(){
+  const cols = [
+    {k:'created_at', l:'When', html:r => esc(when(r.created_at)), sv:r => r.created_at},
+    {k:'display_name', l:'Player', html:r => esc(r.display_name || '—')},
+    {k:'won', l:'Result', html:r => r.won ? '<b style="color:var(--good)">Win</b>' : '<b style="color:var(--bad)">Loss</b>', sv:r => r.won ? 1 : 0},
+    {k:'player_co', l:'Player CO', html:r => esc(coName(r.player_co))},
+    {k:'ai_co', l:'AI CO', html:r => esc(coName(r.ai_co))},
+    {k:'days', l:'Days', num:1},
+    {k:'win_by', l:'How', html:r => r.win_by === 'hq' ? 'HQ capture' : r.win_by === 'rout' ? 'Rout' : '—'},
+    {k:'score', l:'Rank', html:r => r.rank_letter ? `${rankBadge(r.rank_letter)} <span class="muted">${r.score}</span>` : '—'},
+    {k:'fog', l:'Fog', html:r => r.fog ? 'On' : '—'}
+  ];
+  sortable($('t-games'), D.games.recent || [], cols, {sort:'created_at', search:true, empty:'No saved games yet'});
+}
+function renderCos(){
+  const el = $('t-cos');
+  const pc = D.games.by_player_co || [], ac = D.games.by_ai_co || [];
+  const ranks = D.games.ranks || {};
+  const rankRow = ['S','A','B','C','D'].map(r => `<div class="card" style="padding:10px;text-align:center;min-width:70px">${rankBadge(r)}<div style="font-weight:800;font-size:18px;margin-top:4px">${fmt(ranks[r] || 0)}</div></div>`).join('');
+  el.innerHTML = `
+    <h3>Player commanders</h3><p class="muted" style="margin:0 0 6px">Which commanders players pick, and how they do with them.</p><div id="pcT"></div>
+    <h3 style="margin-top:16px">AI commanders</h3><p class="muted" style="margin:0 0 6px">How often players beat each AI commander — low numbers mean that AI is hard.</p><div id="acT"></div>
+    <h3 style="margin-top:16px">Ranks earned</h3><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">${rankRow}</div>`;
+  sortable($('pcT'), pc, [
+    {k:'co', l:'Commander', html:r => `<b>${esc(coName(r.co))}</b>`},
+    {k:'games', l:'Games', num:1}, {k:'wins', l:'Wins', num:1},
+    {k:'win_rate', l:'Win rate', num:1, html:r => pct(r.win_rate)}, {k:'avg_days', l:'Avg days', num:1}
+  ], {sort:'games', empty:'No games yet'});
+  sortable($('acT'), ac, [
+    {k:'co', l:'AI commander', html:r => `<b>${esc(coName(r.co))}</b>`},
+    {k:'games', l:'Games', num:1}, {k:'player_wins', l:'Player wins', num:1},
+    {k:'player_win_rate', l:'Player win rate', num:1, html:r => pct(r.player_win_rate)}
+  ], {sort:'games', empty:'No games yet'});
+}
+
+$('tabs').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('tabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  ['users','feedback','games','cos'].forEach(t => $('t-' + t).classList.toggle('hide', t !== b.dataset.t));
+});
+
+boot();
+</script>
+</body>
+</html>

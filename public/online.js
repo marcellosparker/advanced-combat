@@ -4,7 +4,7 @@
 // Talks to Supabase. Everything here is optional: if config is missing or
 // the network fails, the game keeps working offline.
 // ============================================================
-const CLIENT_VERSION = '0.7.0';
+const CLIENT_VERSION = '0.8.0';
 const Online = (() => {
   const cfg = window.AC_CONFIG || {};
   const configured = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase);
@@ -12,7 +12,18 @@ const Online = (() => {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   }) : null;
   let session = null, profile = null;
-  const PENDING_KEY = 'advcombat.pendingResults';
+  const PENDING_KEY = 'advcombat.pendingResults', DEVICE_KEY = 'advcombat.device';
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+  const SESSION_ID = uuid();
+  function deviceId(){ try { let d = localStorage.getItem(DEVICE_KEY); if (!d) { d = uuid(); localStorage.setItem(DEVICE_KEY, d); } return d; } catch(e){ return null; } }
+  // Usage tracking: what happened, never personal details. Fire-and-forget; failures are ignored.
+  function track(kind, data){
+    if (!configured) return;
+    try {
+      sb.from('events').insert({ kind, data: data || {}, device_id: deviceId(), session_id: SESSION_ID,
+        user_id: signedIn() ? session.user.id : null, client_version: CLIENT_VERSION }).then(() => {}, () => {});
+    } catch(e){}
+  }
 
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const errText = e => (e && (e.message || e.error_description)) || 'Something went wrong. Try again.';
@@ -68,6 +79,10 @@ const Online = (() => {
     return saved;
   }
   async function onGameOver(){
+    if (G && G.over && !G.trackedEnd){
+      G.trackedEnd = true;
+      track('game_end', { mode: G.mode, winner: G.over, won: G.mode === 'ai' ? G.over === 'red' : null, days: G.day, win_by: G.winBy || null, co: G.co, fog: !!G.fog });
+    }
     const row = buildResult();
     if (!row) return;
     const el = () => document.getElementById('vSave');
@@ -273,6 +288,7 @@ const Online = (() => {
     if (!configured) return;
     const { data } = await sb.auth.getSession();
     session = data.session;
+    track('session_start', { screen: innerWidth + 'x' + innerHeight, resumed: !!(G && G.day > 1) });
     await loadProfile(); renderChip();
     if (signedIn()) { const n = await flushPending(); if (n) toast(`${n} saved result${n===1?'':'s'} uploaded`); }
     sb.auth.onAuthStateChange(async (event, s) => {
@@ -287,7 +303,7 @@ const Online = (() => {
       }
     });
   }
-  return { configured, init, openAccount, openHistory, openLeaderboard, openFeedback, onGameOver, signedIn };
+  return { configured, track, init, openAccount, openHistory, openLeaderboard, openFeedback, onGameOver, signedIn };
 })();
 document.getElementById('acctBtn').onclick = () => Online.openAccount();
 document.getElementById('fbBtn').onclick = () => Online.openFeedback();

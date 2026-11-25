@@ -1409,7 +1409,8 @@ function pickCOs(mode){
     $('card').querySelectorAll('[data-co]').forEach(b => b.onclick = () => { picks[side] = b.dataset.co; done(); });
     $('mBack').onclick = openMenu;
   };
-  const start = () => { closeModal(); clearSave(); newGame(mode, settings.luck, settings.fog, picks); resize(); };
+  const start = () => { closeModal(); clearSave(); newGame(mode, settings.luck, settings.fog, picks); resize();
+    if (typeof Online !== 'undefined') Online.track('game_start', { mode, co: picks, fog: !!settings.fog, luck: !!settings.luck }); };
   ask('red', () => {
     if (mode === 'hot') ask('blue', start);
     else { const pool = Object.keys(COS).filter(k => k !== picks.red); picks.blue = pool[Math.floor(Math.random()*pool.length)]; start(); }
