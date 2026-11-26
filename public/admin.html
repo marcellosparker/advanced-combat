@@ -4,14 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Advanced Combat · Admin</title>
+<title>Nullfront · Admin</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <script src="/api/config"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
 <style>
 :root{
   color-scheme:dark;
-  --bg:#121418;--surface-1:#1c1f26;--surface-2:#252932;--line:#323844;--grid:#2a2f39;
-  --text-primary:#eceef2;--text-secondary:#99a0ad;--acc:#f2c14e;
+  --bg:#070b14;--surface-1:#0d1524;--surface-2:#152139;--line:#22324f;--grid:#1a2740;
+  --text-primary:#e6f1ff;--text-secondary:#8296b4;--acc:#3de0ff;
   --series-1:#338ced;--series-2:#e76624;--series-3:#00a888;
   --good:#0aac23;--bad:#eb6263;
 }
@@ -25,7 +26,7 @@ header h1 small{color:var(--text-secondary);font-weight:600}
 .grow{flex:1}
 button,select,input{font:inherit;color:var(--text-primary);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
 button{font-weight:600;cursor:pointer}
-button.pri{background:var(--acc);color:#1b1b1b;border-color:transparent}
+button.pri{background:var(--acc);color:#04121a;border-color:transparent}
 button:disabled{opacity:.5}
 .card{background:var(--surface-1);border:1px solid var(--line);border-radius:14px;padding:14px}
 .muted{color:var(--text-secondary)}
@@ -43,12 +44,12 @@ button:disabled{opacity:.5}
 .legend i.sq{height:10px;width:10px;border-radius:3px}
 .plot{position:relative}
 .plot svg{display:block;width:100%;height:auto;overflow:visible}
-.tip{position:absolute;pointer-events:none;background:#0d0f12;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:2}
+.tip{position:absolute;pointer-events:none;background:#04070d;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .1s;z-index:2}
 .tip b{display:block;margin-bottom:2px}
 .tip .r{display:flex;align-items:center;gap:6px}
 .tip .r i{width:8px;height:8px;border-radius:50%}
 .tabs{display:flex;gap:6px;margin:4px 0 12px;flex-wrap:wrap}
-.tabs button.on{background:var(--acc);color:#1b1b1b;border-color:transparent}
+.tabs button.on{background:var(--acc);color:#04121a;border-color:transparent}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .tools input{min-width:220px}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
@@ -58,14 +59,14 @@ button:disabled{opacity:.5}
 .tbl tr:hover td{background:rgba(255,255,255,.02)}
 .scroll{overflow-x:auto}
 .pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11px;font-weight:700;background:var(--surface-2);border:1px solid var(--line)}
-.pill.bug{border-color:#7a352c;color:#ffb0a4}.pill.balance{border-color:#6b5a22;color:#f2d27a}.pill.idea{border-color:#235a3a;color:#9ff0a8}
-.pill.admin{border-color:#6b5a22;color:var(--acc)}
+.pill.bug{border-color:#7a352c;color:#ffb0a4}.pill.balance{border-color:#145a6b;color:#8ff0ff}.pill.idea{border-color:#235a3a;color:#9ff0a8}
+.pill.admin{border-color:#145a6b;color:var(--acc)}
 .fb{border-bottom:1px solid var(--grid);padding:12px 0}
 .fb:last-child{border-bottom:none}
 .fb .msg{white-space:pre-wrap;margin:6px 0}
-.fb pre{background:#0d0f12;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto;font-size:12px}
-.rk{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;font-weight:900;font-style:italic;color:#1b1b1b;background:#9aa1ad;font-size:13px}
-.rk-S{background:linear-gradient(135deg,#ffe27a,#ff8a3d)}.rk-A{background:#f2c14e}.rk-B{background:#7fe08a}.rk-C{background:#7ab8ff}
+.fb pre{background:#04070d;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto;font-size:12px}
+.rk{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;font-weight:900;font-style:italic;color:#04121a;background:#9aa1ad;font-size:13px}
+.rk-S{background:linear-gradient(135deg,#ffe27a,#ff8a3d)}.rk-A{background:#3de0ff}.rk-B{background:#7fe08a}.rk-C{background:#7ab8ff}
 .gate{max-width:380px;margin:12vh auto}
 .gate .form{display:flex;flex-direction:column;gap:10px;margin-top:10px}
 .gate label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
@@ -91,7 +92,7 @@ button:disabled{opacity:.5}
 
   <div id="app" class="hide">
     <header>
-      <h1>Advanced Combat <small>· Admin</small></h1>
+      <h1>Nullfront <small>· Admin</small></h1>
       <div class="grow"></div>
       <span class="muted" id="who"></span>
       <select id="range" aria-label="Date range"><option value="14">Last 14 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select>

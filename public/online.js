@@ -1,6 +1,6 @@
 "use strict";
 // ============================================================
-// Advanced Combat — online layer (accounts, records, leaderboard, feedback)
+// Nullfront — online layer (accounts, records, leaderboard, feedback)
 // Talks to Supabase. Everything here is optional: if config is missing or
 // the network fails, the game keeps working offline.
 // ============================================================
@@ -55,7 +55,7 @@ const Online = (() => {
     const b = document.getElementById('acctBtn');
     if (!b) return;
     b.textContent = '';
-    const ic = document.createElement('span'); ic.textContent = '👤'; b.appendChild(ic);
+    const ic = document.createElement('span'); ic.style.display = 'inline-flex'; ic.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>'; b.appendChild(ic);
     const nm = document.createElement('span'); nm.className = 'an';
     nm.textContent = signedIn() ? (profile ? profile.display_name : 'Account') : 'Sign in';
     b.appendChild(nm);
