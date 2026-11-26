@@ -646,18 +646,21 @@ function drawRoad(x, y, px, py){
   if (s){ if (!sw) ctx.fillRect(px+a-cw, py+b, cw, T-b); if (!se) ctx.fillRect(px+b, py+b, cw, T-b); }
   if (w){ if (!nw) ctx.fillRect(px, py+a-cw, a, cw); if (!sw) ctx.fillRect(px, py+b, a, cw); }
   if (e){ if (!ne) ctx.fillRect(px+b, py+a-cw, T-b, cw); if (!se) ctx.fillRect(px+b, py+b, T-b, cw); }
-  if (ne || nw || se || sw) return; // plaza: no lane dashes
-  // center dashes on straight segments only
-  const straightV = n && s && !w && !e, straightH = w && e && !n && !s;
-  ctx.fillStyle = dash;
-  const dw = T*.06, dl = T*.2;
-  if (straightV){ ctx.fillRect(px+mid-dw/2, py+T*.12, dw, dl); ctx.fillRect(px+mid-dw/2, py+T*.62, dw, dl); }
-  else if (straightH){ ctx.fillRect(px+T*.12, py+mid-dw/2, dl, dw); ctx.fillRect(px+T*.62, py+mid-dw/2, dl, dw); }
-  else {
-    if (n) ctx.fillRect(px+mid-dw/2, py, dw, T*.12);
-    if (s) ctx.fillRect(px+mid-dw/2, py+T*.88, dw, T*.12);
-    if (w) ctx.fillRect(px, py+mid-dw/2, T*.12, dw);
-    if (e) ctx.fillRect(px+T*.88, py+mid-dw/2, T*.12, dw);
+  // dirt-road texture: worn bumps and a few pebbles, placed deterministically per tile
+  let seed = (x*73856093 ^ y*19349663) >>> 0;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const spot = () => [px + a + (b-a)*(.12 + rnd()*.76), py + a + (b-a)*(.12 + rnd()*.76)];
+  ctx.fillStyle = 'rgba(120,80,35,.28)';
+  for (let i=0;i<3;i++){ const [qx,qy] = spot(); ctx.beginPath(); ctx.ellipse(qx, qy, T*(.05 + rnd()*.04), T*(.025 + rnd()*.02), rnd()*3, 0, 7); ctx.fill(); }
+  ctx.fillStyle = 'rgba(255,240,200,.35)';
+  for (let i=0;i<2;i++){ const [qx,qy] = spot(); ctx.beginPath(); ctx.ellipse(qx, qy, T*.04, T*.018, rnd()*3, 0, 7); ctx.fill(); }
+  ctx.lineWidth = 1; ctx.strokeStyle = '#6b4a26';
+  const pebbles = 2 + Math.floor(rnd()*3);
+  for (let i=0;i<pebbles;i++){
+    const [qx,qy] = spot(), r = T*(.022 + rnd()*.022);
+    ctx.fillStyle = rnd() > .5 ? '#a39a8a' : '#bdb3a0';
+    ctx.beginPath(); ctx.ellipse(qx, qy, r*1.25, r, rnd()*3, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(qx - r*.35, qy - r*.35, r*.35, 0, 7); ctx.fill();
   }
 }
 // Soft painted coastline: sandy banks on straight edges, rounded grass headlands in concave corners.
@@ -805,8 +808,7 @@ function icon(type, s, col){
   }
   else if (type==='tank'){                                                                    // armored horse + lance
     P([[-.14,.18],[-.12,-.0],[-.04,-.13],[.02,-.19],[.05,-.13],[.18,-.04],[.18,.02],[.07,.01],[.02,.08],[.04,.18]]);
-    P([[-.04,-.13],[.02,-.19],[.0,-.27],[-.05,-.2]]);
-    L([[-.24,.1],[.28,-.2]], .035); P([[.28,-.2],[.34,-.25],[.3,-.16]]);
+    P([[-.05,-.16],[-.02,-.22],[-.12,-.34],[-.2,-.3],[-.13,-.24],[-.2,-.2],[-.09,-.17]]);
   }
   else if (type==='heavy'){                                                                   // stone golem
     P([[-.08,-.24],[.08,-.24],[.09,-.12],[-.09,-.12]]);
