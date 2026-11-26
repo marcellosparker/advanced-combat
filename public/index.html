@@ -190,6 +190,20 @@ button.pri{background:linear-gradient(180deg,#ffd46b,#e0a22c);color:#3a2208;box-
 .logo small{display:block;font-family:var(--crest);font-weight:700;font-size:11px;letter-spacing:.3em;color:#e9cf96;margin-top:7px}
 .brand{display:flex;align-items:center;gap:6px;font-family:var(--crest);font-weight:900;letter-spacing:.06em;font-size:14px;color:#ffe7a8;padding:0 2px;text-shadow:0 2px 0 #2a180a}
 @media (max-width:420px){.brand span{display:none}}
+/* parchment scroll dialog */
+.card.scroll{position:relative;overflow:visible;max-width:400px;width:calc(100% - 28px);margin:24px 0;padding:26px 30px 22px;text-align:center;border:0;border-radius:3px;
+  background:radial-gradient(ellipse at 50% 40%,#fbf0d2 0,#f2dfb0 70%,#e6cb8e 100%);
+  box-shadow:inset 0 0 0 1px #c9a565,inset 0 10px 14px -8px #8a5a2c88,inset 0 -10px 14px -8px #8a5a2c88,0 14px 30px #000a}
+.card.scroll::before,.card.scroll::after{content:"";position:absolute;left:-14px;right:-14px;height:20px;border-radius:10px;border:2.5px solid #2a180a;
+  background:linear-gradient(90deg,#3a2412 0 9px,#2a180a 9px 11px,transparent 11px calc(100% - 11px),#2a180a calc(100% - 11px) calc(100% - 9px),#3a2412 calc(100% - 9px)),linear-gradient(180deg,#c48a4a 0,#8a5a2c 45%,#5a3a1c 100%);box-shadow:0 3px 0 #2a180a}
+.card.scroll::before{top:-14px}
+.card.scroll::after{bottom:-14px}
+.card.scroll h2{color:#7a1f12;text-shadow:none;font-size:22px;margin:4px 0 8px}
+.card.scroll p{color:#4a2e14;font-size:15px;margin:6px auto 16px;max-width:30ch}
+.card.scroll b{color:#7a1f12}
+.card.scroll .row{justify-content:center}
+.card.scroll button:not(.pri){background:#efdcae;color:#4a2e14}
+
 button[data-co]{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif !important}
 button[data-co] .nm{font-family:var(--disp) !important}
 ul{padding-left:18px;margin:6px 0;color:var(--mute)}
@@ -1494,8 +1508,8 @@ function showVictory(){
 $('pwr').addEventListener('click', () => { if (fxSkip) fxSkip(); });
 
 // ---------- MODALS ----------
-function modal(html, solid){ $('card').innerHTML = html; $('modal').classList.toggle('solid', !!solid); $('modal').classList.remove('hide'); }
-function closeModal(){ $('modal').classList.add('hide'); $('modal').classList.remove('solid'); }
+function modal(html, solid, look){ $('card').innerHTML = html; $('card').className = 'card' + (look ? ' ' + look : ''); $('modal').classList.toggle('solid', !!solid); $('modal').classList.remove('hide'); }
+function closeModal(){ $('modal').classList.add('hide'); $('modal').classList.remove('solid'); $('card').className = 'card'; }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal' && G && !G.over && !$('modal').classList.contains('solid') && !$('modal').dataset.lock) closeModal(); });
 function openBuild(x,y){
   const s = G.turn, f = G.funds[s];
@@ -1537,10 +1551,10 @@ function confirmEnd(){
   const ready = G.units.filter(u => u.side === s && !u.acted).length;
   const pwrReady = canPower(s,'cop') || canPower(s,'scop');
   const notes = [];
-  if (ready) notes.push(`<b style="color:#ffffff">${ready}</b> unit${ready===1?' hasn’t':'s haven’t'} acted yet.`);
+  if (ready) notes.push(`<b>${ready}</b> unit${ready===1?' hasn’t':'s haven’t'} acted yet.`);
   if (pwrReady) notes.push('Your commander power is ready and unused.');
   modal(`<h2>End your turn?</h2><p>${notes.join(' ') || 'All units have acted.'}</p>
-    <div class="row"><button class="pri" id="mGo">End turn</button><button id="mClose">Keep playing</button></div>`);
+    <div class="row"><button class="pri" id="mGo">End turn</button><button id="mClose">Keep playing</button></div>`, false, 'scroll');
   $('mGo').onclick = () => { closeModal(); clearUI(); endTurn(); };
   $('mClose').onclick = closeModal;
 }
