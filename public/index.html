@@ -203,6 +203,15 @@ button.pri{background:linear-gradient(180deg,#ffd46b,#e0a22c);color:#3a2208;box-
 .card.scroll b{color:#7a1f12}
 .card.scroll .row{justify-content:center}
 .card.scroll button:not(.pri){background:#efdcae;color:#4a2e14}
+.card.scroll{max-height:none}
+.card.scroll .sbody{max-height:calc(86vh - 70px);overflow:auto;margin:0 -10px;padding:0 10px;scrollbar-color:#a8743c transparent}
+.card.scroll .grid.one{gap:10px;text-align:left;margin-bottom:14px}
+.card.scroll button[data-co]{background:#f8ecc9;color:#3a2208;border:2px solid #8a5a2c !important;box-shadow:0 2px 0 #8a5a2c;border-radius:8px;padding:10px 12px}
+.card.scroll button[data-co]:hover{background:#fff4d8;border-color:#2a180a !important}
+.card.scroll button[data-co] small{color:#5a3a1c}
+.card.scroll button[data-co] b{color:#7a1f12}
+.card.scroll button[data-co] > span > span > span:first-child{font-family:var(--crest);font-weight:900;font-size:17px;color:#3a2208}
+
 
 button[data-co]{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif !important}
 button[data-co] .nm{font-family:var(--disp) !important}
@@ -1508,7 +1517,7 @@ function showVictory(){
 $('pwr').addEventListener('click', () => { if (fxSkip) fxSkip(); });
 
 // ---------- MODALS ----------
-function modal(html, solid, look){ $('card').innerHTML = html; $('card').className = 'card' + (look ? ' ' + look : ''); $('modal').classList.toggle('solid', !!solid); $('modal').classList.remove('hide'); }
+function modal(html, solid, look){ $('card').innerHTML = look === 'scroll' ? `<div class="sbody">${html}</div>` : html; $('card').className = 'card' + (look ? ' ' + look : ''); $('modal').classList.toggle('solid', !!solid); $('modal').classList.remove('hide'); }
 function closeModal(){ $('modal').classList.add('hide'); $('modal').classList.remove('solid'); $('card').className = 'card'; }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal' && G && !G.over && !$('modal').classList.contains('solid') && !$('modal').dataset.lock) closeModal(); });
 function openBuild(x,y){
@@ -1592,10 +1601,10 @@ function pickCOs(mode){
   const picks = {};
   const ask = (side, done) => {
     coPickSide = side;
-    let h = `<h2 style="color:${SIDES[side].c}">${SIDES[side].n}: choose a commander</h2><div class="grid one">`;
+    let h = `<h2 style="color:${SIDES[side].d}">${SIDES[side].n}: choose a commander</h2><div class="grid one">`;
     for (const id in COS) h += `<button data-co="${id}">${coCard(id)}</button>`;
     h += `</div><div class="row"><button id="mBack">Back</button></div>`;
-    modal(h, mode === 'hot' && side === 'blue');
+    modal(h, mode === 'hot' && side === 'blue', 'scroll');
     $('card').querySelectorAll('[data-co]').forEach(b => b.onclick = () => { picks[side] = b.dataset.co; done(); });
     $('mBack').onclick = openMenu;
   };
