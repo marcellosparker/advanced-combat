@@ -4,7 +4,7 @@
 // Talks to Supabase. Everything here is optional: if config is missing or
 // the network fails, the game keeps working offline.
 // ============================================================
-const CLIENT_VERSION = '0.8.0';
+const CLIENT_VERSION = '0.8.1';
 const Online = (() => {
   const cfg = window.AC_CONFIG || {};
   const configured = !!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase);
@@ -26,7 +26,20 @@ const Online = (() => {
   }
 
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const errText = e => (e && (e.message || e.error_description)) || 'Something went wrong. Try again.';
+  const errText = e => {
+    const code = e && e.code, m = (e && (e.message || e.error_description)) || '';
+    if (code === 'over_email_send_rate_limit' || /rate limit|only request this after/i.test(m)) return 'Too many emails sent just now. Wait a few minutes, then try again — and check your junk folder for the first one.';
+    if (code === 'email_not_confirmed' || /email not confirmed/i.test(m)) return 'Confirm your email first. Check your inbox and junk folder for the link.';
+    if (code === 'invalid_credentials' || /invalid login credentials/i.test(m)) return 'Wrong email or password.';
+    if (code === 'user_already_exists' || /already registered/i.test(m)) return 'That email already has an account. Try signing in.';
+    return m || 'Something went wrong. Try again.';
+  };
+  const pwField = (ac) => `<span class="pwWrap"><input id="aPass" type="password" autocomplete="${ac}"><button type="button" class="pwEye" id="aEye" aria-label="Show password" aria-pressed="false">Show</button></span>`;
+  function wirePw(){
+    const b = $('aEye'), i = $('aPass'); if (!b || !i) return;
+    b.onclick = () => { const show = i.type === 'password'; i.type = show ? 'text' : 'password';
+      b.textContent = show ? 'Hide' : 'Show'; b.setAttribute('aria-label', show ? 'Hide password' : 'Show password'); b.setAttribute('aria-pressed', String(show)); i.focus(); };
+  }
   const signedIn = () => !!(session && session.user);
 
   function loadPending(){ try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); } catch(e){ return []; } }
@@ -115,14 +128,14 @@ const Online = (() => {
     let body = '';
     if (tab === 'in') body = `
       <label>Email<input id="aEmail" type="email" autocomplete="email" inputmode="email"></label>
-      <label>Password<input id="aPass" type="password" autocomplete="current-password"></label>
+      <label>Password${pwField('current-password')}</label>
       <p class="aMsg" id="aMsg"></p>
       <div class="row"><button class="pri" id="aGo">Sign in</button><button id="mClose">Cancel</button></div>
       <p><button class="linkish" id="aForgot">Forgot password?</button></p>`;
     else if (tab === 'up') body = `
       <label>Commander name <small>(3–20 letters, numbers, spaces, _ . -)</small><input id="aName" maxlength="20" autocomplete="nickname"></label>
       <label>Email<input id="aEmail" type="email" autocomplete="email" inputmode="email"></label>
-      <label>Password <small>(at least 8 characters)</small><input id="aPass" type="password" autocomplete="new-password"></label>
+      <label>Password <small>(at least 8 characters)</small>${pwField('new-password')}</label>
       <p class="aMsg" id="aMsg"></p>
       <div class="row"><button class="pri" id="aGo">Create account</button><button id="mClose">Cancel</button></div>`;
     else body = `
@@ -135,6 +148,7 @@ const Online = (() => {
     if ($('mClose')) $('mClose').onclick = closeModal;
     if ($('mBackIn')) $('mBackIn').onclick = () => openAccount('in');
     if ($('aForgot')) $('aForgot').onclick = () => openAccount('reset');
+    wirePw();
     const msg = (t, ok) => { const m = $('aMsg'); m.textContent = t; m.className = 'aMsg ' + (ok ? 'ok' : 'bad'); };
     $('aGo').onclick = async () => {
       const email = ($('aEmail').value || '').trim();
@@ -199,8 +213,9 @@ const Online = (() => {
     };
   }
   function newPasswordPrompt(){
-    modal(`<h2>Set a new password</h2><div class="form"><label>New password <small>(at least 8 characters)</small><input id="aPass" type="password" autocomplete="new-password"></label><p class="aMsg" id="aMsg"></p></div>
+    modal(`<h2>Set a new password</h2><div class="form"><label>New password <small>(at least 8 characters)</small>${pwField('new-password')}</label><p class="aMsg" id="aMsg"></p></div>
       <div class="row"><button class="pri" id="aGo">Save password</button></div>`);
+    wirePw();
     $('aGo').onclick = async () => {
       const p = $('aPass').value;
       if (p.length < 8) { $('aMsg').textContent = 'At least 8 characters.'; $('aMsg').className = 'aMsg bad'; return; }
