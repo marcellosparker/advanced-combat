@@ -660,6 +660,44 @@ function drawRoad(x, y, px, py){
     if (e) ctx.fillRect(px+T*.88, py+mid-dw/2, T*.12, dw);
   }
 }
+// Soft painted coastline: sandy banks on straight edges, rounded grass headlands in concave corners.
+function shore(x, y, px, py){
+  const land = (X,Y) => X>=0 && Y>=0 && X<W && Y<H && !'w~b'.includes(tile(X,Y).t);
+  const n = land(x,y-1), so = land(x,y+1), w = land(x-1,y), e = land(x+1,y);
+  const b = T*.11, sand = '#e8d196', foam = 'rgba(255,255,255,.8)', grass = '#7cb53c';
+  ctx.save(); ctx.lineCap = 'round';
+  ctx.fillStyle = sand;
+  if (n) ctx.fillRect(px, py, T, b);
+  if (so) ctx.fillRect(px, py+T-b, T, b);
+  if (w) ctx.fillRect(px, py, b, T);
+  if (e) ctx.fillRect(px+T-b, py, b, T);
+  ctx.strokeStyle = foam; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  if (n){ ctx.moveTo(px + (w ? T*.3 : 2), py+b+2); ctx.lineTo(px+T - (e ? T*.3 : 2), py+b+2); }
+  if (so){ ctx.moveTo(px + (w ? T*.3 : 2), py+T-b-2); ctx.lineTo(px+T - (e ? T*.3 : 2), py+T-b-2); }
+  if (w){ ctx.moveTo(px+b+2, py + (n ? T*.3 : 2)); ctx.lineTo(px+b+2, py+T - (so ? T*.3 : 2)); }
+  if (e){ ctx.moveTo(px+T-b-2, py + (n ? T*.3 : 2)); ctx.lineTo(px+T-b-2, py+T - (so ? T*.3 : 2)); }
+  ctx.stroke();
+  const corner = (cx, cy, a0) => {
+    const r = T*.3;
+    ctx.fillStyle = grass; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, a0, a0 + Math.PI/2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = sand; ctx.lineWidth = b; ctx.beginPath(); ctx.arc(cx, cy, r + b/2 - 1, a0, a0 + Math.PI/2); ctx.stroke();
+    ctx.strokeStyle = foam; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(cx, cy, r + b + 2, a0, a0 + Math.PI/2); ctx.stroke();
+  };
+  if (n && w) corner(px, py, 0);
+  if (n && e) corner(px+T, py, Math.PI/2);
+  if (so && e) corner(px+T, py+T, Math.PI);
+  if (so && w) corner(px, py+T, Math.PI*1.5);
+  const nub = (cx, cy, a0) => {
+    ctx.fillStyle = sand; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, b*1.3, a0, a0 + Math.PI/2); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = foam; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(cx, cy, b*1.3 + 2, a0, a0 + Math.PI/2); ctx.stroke();
+  };
+  if (!n && !w && land(x-1,y-1)) nub(px, py, 0);
+  if (!n && !e && land(x+1,y-1)) nub(px+T, py, Math.PI/2);
+  if (!so && !e && land(x+1,y+1)) nub(px+T, py+T, Math.PI);
+  if (!so && !w && land(x-1,y+1)) nub(px, py+T, Math.PI*1.5);
+  ctx.restore();
+}
 function drawTile(x,y){
   const px = x*T, py = y*T, t = tile(x,y), ch = t.t;
   const plain = (x + y) % 2 ? '#7fb83e' : '#79b13a';
@@ -683,6 +721,7 @@ function drawTile(x,y){
     ctx.fillStyle='rgba(255,255,255,.55)';
     for (const [ox,oy,w] of [[.25,.3,.14],[.66,.55,.18],[.32,.8,.12]]){ ctx.beginPath(); ctx.ellipse(px+T*ox,py+T*oy,T*w,T*.035,0,0,7); ctx.fill(); }
   }
+  if (ch==='w' || ch==='~' || ch==='b') shore(x, y, px, py);
   if (ch==='b'){
     const horiz = roadLink(x-1,y) || roadLink(x+1,y);
     const vert = roadLink(x,y-1) || roadLink(x,y+1);
@@ -708,7 +747,7 @@ function drawTile(x,y){
       ctx.fillStyle='#f2b93b'; ctx.fillRect(px+3,py+3,(T-6)*(20-t.cap)/20,4);
     }
   }
-  ctx.strokeStyle='rgba(40,30,10,.12)'; ctx.lineWidth=1; ctx.strokeRect(px+.5,py+.5,T-1,T-1);
+  if (!'w~b'.includes(ch)){ ctx.strokeStyle='rgba(40,30,10,.12)'; ctx.lineWidth=1; ctx.strokeRect(px+.5,py+.5,T-1,T-1); }
 }
 function drawBuilding(ch, owner, px, py, S){
     const col = owner ? SIDES[owner].c : '#9a8a72', dk = owner ? SIDES[owner].d : '#5e5244', ink = '#2a180a';
@@ -748,12 +787,19 @@ function icon(type, s, col){
   const P = (pts, k) => { k = k || 1; ctx.beginPath(); pts.forEach(([a,b],i) => i ? ctx.lineTo(s*a*k,s*b*k) : ctx.moveTo(s*a*k,s*b*k)); ctx.closePath(); ctx.fill(); };
   const L = (pts, w) => { ctx.lineWidth = s*w; ctx.beginPath(); pts.forEach(([a,b],i) => i ? ctx.lineTo(s*a,s*b) : ctx.moveTo(s*a,s*b)); ctx.stroke(); };
   const man = () => {
-    ctx.beginPath(); ctx.arc(-s*.03, -s*.14, s*.065, Math.PI, 0); ctx.fill();          // helmet dome
-    P([[-.1,-.14],[.04,-.14],[.04,-.09],[-.1,-.09]]);
-    P([[-.1,-.07],[.04,-.07],[.07,.13],[-.13,.13]]);                                    // body
+    ctx.beginPath(); ctx.arc(-s*.03, -s*.15, s*.07, Math.PI, 0); ctx.fill();           // helmet dome
+    P([[-.11,-.15],[.05,-.15],[.05,-.1],[.02,-.1],[.02,-.08],[-.08,-.08],[-.08,-.1],[-.11,-.1]]);   // brim + face
+    P([[-.12,-.06],[.06,-.06],[.08,.04],[.04,.04],[.05,.14],[-.11,.14],[-.1,.04],[-.14,.04]]);      // tunic with arms
   };
-  if (type==='rifle'){ man(); L([[.02,.02],[.2,-.16]], .04); L([[.06,-.06],[.14,.0]], .035); }       // sword + guard
-  else if (type==='rocket'){ man(); L([[-.16,.18],[.18,-.24]], .03); P([[.18,-.24],[.24,-.32],[.21,-.2]]); }  // pike
+  if (type==='rifle'){                                                                        // round shield + raised sword
+    man(); L([[.06,-.03],[.22,-.24]], .045); L([[.05,-.13],[.15,-.05]], .04);
+    ctx.lineWidth = s*.035; ctx.beginPath(); ctx.arc(-s*.17, s*.04, s*.075, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-s*.17, s*.04, s*.025, 0, 7); ctx.fill();
+  }
+  else if (type==='rocket'){                                                                  // tall upright pike with pennant
+    man(); L([[.12,.2],[.12,-.26]], .035);
+    P([[.08,-.26],[.12,-.38],[.16,-.26]]); P([[.12,-.24],[.26,-.2],[.12,-.15]]);
+  }
   else if (type==='scout'){                                                                   // horse head
     P([[-.12,.16],[-.1,-.02],[-.02,-.16],[.04,-.22],[.06,-.16],[.2,-.06],[.2,.0],[.08,-.01],[.02,.06],[.04,.16]]);
   }
@@ -785,6 +831,32 @@ function icon(type, s, col){
     P([[.24,-.1],[.3,-.07],[.24,-.06]]);
   }
 }
+// Small, high-contrast medallion showing which property a unit stands on.
+function propBadge(t, x, y, R){
+  const ink = '#2a180a', col = t.owner ? SIDES[t.owner].c : '#9a8a72';
+  ctx.save(); ctx.lineJoin = 'round';
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(x, y + 1.5, R + 1.5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f6e7c1'; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = ink; ctx.stroke();
+  ctx.lineWidth = 1.6; ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(x, y, R - 2.2, 0, 7); ctx.stroke();
+  const s = R * .74, P = pts => { ctx.beginPath(); pts.forEach(([a,b],i) => i ? ctx.lineTo(x + s*a, y + s*b) : ctx.moveTo(x + s*a, y + s*b)); ctx.closePath(); };
+  ctx.lineWidth = 1.3; ctx.strokeStyle = ink;
+  if (t.t === 'c'){
+    P([[-.6,.75],[-.6,.0],[.6,.0],[.6,.75]]); ctx.fillStyle = '#fff8e6'; ctx.fill(); ctx.stroke();
+    P([[-.85,.08],[0,-.75],[.85,.08]]); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
+    P([[-.15,.75],[-.15,.32],[.15,.32],[.15,.75]]); ctx.fillStyle = ink; ctx.fill();
+  } else if (t.t === 'F'){
+    P([[-.85,.75],[0,-.7],[.85,.75]]); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
+    P([[-.18,.75],[0,.2],[.18,.75]]); ctx.fillStyle = ink; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x, y - s*.7); ctx.lineTo(x, y - s*1.0); ctx.stroke();
+  } else {
+    P([[-.7,.75],[-.7,-.35],[-.4,-.35],[-.4,-.15],[-.12,-.15],[-.12,-.35],[.12,-.35],[.12,-.15],[.4,-.15],[.4,-.35],[.7,-.35],[.7,.75]]); ctx.fillStyle = '#d7d0c2'; ctx.fill(); ctx.stroke();
+    P([[-.16,.75],[-.16,.3],[0,.15],[.16,.3],[.16,.75]]); ctx.fillStyle = ink; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x, y - s*.35); ctx.lineTo(x, y - s*.95); ctx.stroke();
+    P([[0,-.95],[.5,-.8],[0,-.62]]); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawUnit(u, fx, fy){
   const onProp = Number.isInteger(fx) && Number.isInteger(fy) && TER[tile(fx,fy).t].prop;
   const cx = fx*T + (onProp ? T*.4 : T/2), cy = fy*T + (onProp ? T*.58 : T/2), S = SIDES[u.side];
@@ -801,14 +873,9 @@ function drawUnit(u, fx, fy){
   ctx.strokeStyle = dim ? '#c9c0b0' : '#f2b93b'; ctx.lineWidth = 1.4; hex(r - 3); ctx.stroke();
   ctx.translate(cx, cy + T*.02 - lift);
   if (u.side === 'blue') ctx.scale(-1,1);
-  ctx.save(); ctx.translate(0, 1.6); icon(u.type, T*k*1.22, '#2a180a'); ctx.restore(); icon(u.type, T*k*1.22, '#fff4dc');
+  ctx.save(); ctx.translate(0, 1.6); icon(u.type, T*k*1.34, '#2a180a'); ctx.restore(); icon(u.type, T*k*1.34, '#fff4dc');
   ctx.restore();
-  if (onProp){
-    const t = tile(fx,fy), bs = T*.48, bx = fx*T + T - bs - 2, by = fy*T + 7;
-    ctx.fillStyle='rgba(40,24,10,.82)'; rr(bx-1, by-1, bs+2, bs+2, 4); ctx.fill();
-    ctx.strokeStyle = t.owner ? SIDES[t.owner].c : '#8a9bb8'; ctx.lineWidth = 1.5; rr(bx-1, by-1, bs+2, bs+2, 4); ctx.stroke();
-    drawBuilding(t.t, t.owner, bx, by, bs);
-  }
+  if (onProp) propBadge(tile(fx,fy), fx*T + T*.77, fy*T + T*.23, T*.2);
   const hp = disp(u.hp);
   if (hp < 10){
     ctx.fillStyle='#2a180a'; rr(cx+T*.12, cy+T*.14, T*.3, T*.28, 4); ctx.fill(); ctx.strokeStyle='rgba(242,185,59,.6)'; ctx.lineWidth=1; ctx.stroke();
@@ -1077,7 +1144,7 @@ function threatSet(e){
 
 // ---------- BATTLE SCENE ----------
 const bwrap = document.getElementById('battle'), bcv = document.getElementById('bcv'), bctx = bcv.getContext('2d');
-const TERCOL = {'.':'#7fb83e', f:'#5f9e2e', m:'#8fa046', '=':'#d2ad72', b:'#a8743c', '~':'#46b0c4', w:'#2f8fa8', c:'#a59d8d', F:'#a59d8d', H:'#a59d8d'};
+const TERCOL = {'.':'#7fb83e', f:'#5f9e2e', m:'#8fa046', '=':'#d2ad72', b:'#a8743c', '~':'#46b0c4', w:'#2f8fa8', c:'#b8ad96', F:'#c9a46a', H:'#b8ad96'};
 function figCount(type, hp){ const d = disp(Math.max(0,hp)); return FOOT(type) ? d : Math.ceil(d/2); }
 function hash(i){ const x = Math.sin(i*127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 function figPos(type, i, left, w, h){
@@ -1088,6 +1155,50 @@ function figPos(type, i, left, w, h){
   if (U[type].air) fy -= h*.3;
   return [left ? fx : w - fx, fy];
 }
+// Painted scenery behind the troops: rolling hills, plus the building or peak they're fighting on.
+function battleScenery(ter, x0, w, h, left){
+  const c = bctx, g = h*.62, ink = '#2a180a', W2 = w/2;
+  const Pg = pts => { c.beginPath(); pts.forEach(([a,b],i) => i ? c.lineTo(x0 + W2*a, b) : c.moveTo(x0 + W2*a, b)); c.closePath(); };
+  c.save(); c.lineJoin = 'round'; c.lineWidth = 2; c.strokeStyle = ink;
+  c.fillStyle = '#a9cf7a';
+  c.beginPath(); c.moveTo(x0, g); c.quadraticCurveTo(x0 + W2*.25, g - h*.16, x0 + W2*.55, g - h*.05); c.quadraticCurveTo(x0 + W2*.8, g - h*.14, x0 + W2, g - h*.04); c.lineTo(x0 + W2, g); c.closePath(); c.fill();
+  if (ter === 'm'){
+    Pg([[-.02,g],[.2,g-h*.3],[.34,g-h*.42],[.5,g-h*.24],[.62,g-h*.34],[.86,g],]); c.fillStyle = '#a7a39a'; c.fill(); c.stroke();
+    Pg([[.34,g-h*.42],[.5,g-h*.24],[.44,g],[.3,g]]); c.fillStyle = '#7d786f'; c.fill();
+    Pg([[.27,g-h*.34],[.34,g-h*.42],[.42,g-h*.33],[.37,g-h*.35],[.34,g-h*.31],[.31,g-h*.35]]); c.fillStyle = '#fff'; c.fill();
+  }
+  if (ter === 'c'){
+    const roofs = ['#b5523a','#8a6a4a','#a5482f'];
+    [[.04,.26,.2],[.36,.3,.26],[.72,.24,.19]].forEach(([ox,bw,bh],i) => {
+      const x = ox, wall = g - h*bh*.55, top = g - h*bh;
+      Pg([[x,g],[x,wall],[x+bw,wall],[x+bw,g]]); c.fillStyle = '#f1dfb3'; c.fill(); c.stroke();
+      Pg([[x-.03,wall+2],[x+bw/2,top],[x+bw+.03,wall+2]]); c.fillStyle = roofs[i]; c.fill(); c.stroke();
+      Pg([[x+bw*.4,g],[x+bw*.4,g-h*bh*.28],[x+bw*.6,g-h*bh*.28],[x+bw*.6,g]]); c.fillStyle = '#7a4a22'; c.fill(); c.stroke();
+      Pg([[x+bw*.12,wall+h*.02],[x+bw*.12,wall+h*.05],[x+bw*.28,wall+h*.05],[x+bw*.28,wall+h*.02]]); c.fillStyle = '#ffd46b'; c.fill(); c.stroke();
+    });
+  }
+  if (ter === 'F'){
+    for (let i=0;i<14;i++){ const x = i/13; Pg([[x-.03,g],[x-.03,g-h*.1],[x,g-h*.13],[x+.03,g-h*.1],[x+.03,g]]); c.fillStyle = '#a8743c'; c.fill(); c.stroke(); }
+    [[.18,.3],[.62,.34]].forEach(([ox,bw]) => {
+      Pg([[ox,g-h*.02],[ox+bw/2,g-h*.32],[ox+bw,g-h*.02]]); c.fillStyle = '#f1dfb3'; c.fill(); c.stroke();
+      Pg([[ox+bw*.3,g-h*.02],[ox+bw/2,g-h*.32],[ox+bw*.42,g-h*.02]]); c.fillStyle = left ? '#d8402e' : '#2f74d0'; c.fill(); c.stroke();
+      c.beginPath(); c.moveTo(x0 + W2*(ox+bw/2), g-h*.32); c.lineTo(x0 + W2*(ox+bw/2), g-h*.4); c.stroke();
+    });
+  }
+  if (ter === 'H'){
+    const stone = '#c9c2b4', st2 = '#a59d8d';
+    Pg([[.06,g],[.06,g-h*.22],[.94,g-h*.22],[.94,g]]); c.fillStyle = stone; c.fill(); c.stroke();
+    for (let i=0;i<9;i++){ const x = .08 + i*.1; Pg([[x,g-h*.22],[x,g-h*.26],[x+.05,g-h*.26],[x+.05,g-h*.22]]); c.fill(); c.stroke(); }
+    [[.04,.18],[.78,.18]].forEach(([ox,bw]) => {
+      Pg([[ox,g],[ox,g-h*.36],[ox+bw,g-h*.36],[ox+bw,g]]); c.fillStyle = st2; c.fill(); c.stroke();
+      Pg([[ox-.02,g-h*.36],[ox+bw/2,g-h*.48],[ox+bw+.02,g-h*.36]]); c.fillStyle = left ? '#d8402e' : '#2f74d0'; c.fill(); c.stroke();
+    });
+    Pg([[.42,g],[.42,g-h*.12],[.5,g-h*.16],[.58,g-h*.12],[.58,g]]); c.fillStyle = '#5a3a1c'; c.fill(); c.stroke();
+    c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 1;
+    for (let r=1;r<4;r++){ c.beginPath(); c.moveTo(x0 + W2*.22, g - h*.055*r); c.lineTo(x0 + W2*.78, g - h*.055*r); c.stroke(); }
+  }
+  c.restore();
+}
 function sceneSide(rec, which, t, P, w, h){
   const left = which === 'a';
   const type = rec[which+'Type'], side = rec[which+'Side'], ter = rec[which+'Ter'];
@@ -1097,8 +1208,7 @@ function sceneSide(rec, which, t, P, w, h){
   const sky = bctx.createLinearGradient(0,0,0,h*.62);
   sky.addColorStop(0, left ? '#5aa8e6' : '#e6a25a'); sky.addColorStop(1, '#fff1cf');
   bctx.fillStyle = sky; bctx.fillRect(x0,0,w/2,h*.62);
-  if (TER[ter].prop){ bctx.fillStyle = 'rgba(120,100,80,.55)'; for (let i=0;i<4;i++){ const bw = w*.06, bh = h*(.12 + hash(i+(left?0:9))*.14); bctx.fillRect(x0 + w*.04 + i*w*.11, h*.62 - bh, bw, bh); } }
-  if (ter === 'm'){ bctx.fillStyle = '#a7a39a'; bctx.beginPath(); bctx.moveTo(x0, h*.62); bctx.lineTo(x0 + w*.18, h*.3); bctx.lineTo(x0 + w*.36, h*.62); bctx.fill(); }
+  battleScenery(ter, x0, w, h, left);
   if (ter === 'f'){ for (let i=0;i<6;i++) pine(bctx, x0 + w*(.04 + i*.085), h*.63, h*(.2 + hash(i+(left?0:7))*.12)); }
   bctx.fillStyle = TERCOL[ter] || '#111d31'; bctx.fillRect(x0, h*.62, w/2, h*.38);
   bctx.strokeStyle = 'rgba(0,0,0,.12)'; bctx.lineWidth = 1; for (let i=1;i<6;i++){ const gy = h*.62 + h*.38*(i/6)**1.6; bctx.beginPath(); bctx.moveTo(x0, gy); bctx.lineTo(x0 + w/2, gy); bctx.stroke(); }
@@ -1230,19 +1340,25 @@ function avatarSVG(id, side, mood){
   const lose = mood === 'lose';
   let g = '';
   // hair behind head
-  if (a.style === 'bob') g += `<path d="M26 44 Q24 16 50 15 Q76 16 74 44 L75 66 Q66 62 64 50 L36 50 Q34 62 25 66 Z" fill="${a.hair}"/>`;
-  if (a.style === 'pony') g += `<path d="M68 30 Q92 38 84 70 Q80 54 66 46 Z" fill="${a.hair}"/>`;
+  if (a.style === 'bob') g += `<path d="M26 44 Q24 16 50 15 Q76 16 74 44 L75 66 Q66 62 64 50 L36 50 Q34 62 25 66 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (a.style === 'pony') g += `<path d="M68 30 Q92 38 84 70 Q80 54 66 46 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
   // neck + torso: chainmail collar and heraldic tabard
   g += `<rect x="43" y="62" width="14" height="16" fill="${a.skin}"/><rect x="43" y="66" width="14" height="5" fill="rgba(0,0,0,.12)"/>`;
   g += `<path d="M12 100 Q14 80 34 75 L66 75 Q86 80 88 100 Z" fill="#9aa1ab" stroke="#2a180a" stroke-width="1.5"/>`;
   g += `<path d="M28 100 L32 82 L68 82 L72 100 Z" fill="${S.c}" stroke="#2a180a" stroke-width="1.5"/>`;
   g += `<path d="M32 82 L68 82" stroke="#f2b93b" stroke-width="2.5"/><path d="M50 86 L56 92 L50 99 L44 92 Z" fill="#f2b93b" stroke="#2a180a" stroke-width="1"/>`;
   g += `<path d="M36 74 Q50 82 64 74" stroke="#6f7782" stroke-width="2" fill="none"/>`;
+  g += `<g fill="none" stroke="#6f7782" stroke-width=".9" opacity=".8"><path d="M18 90 q2 2 4 0 q2 2 4 0 M20 84 q2 2 4 0 q2 2 4 0 M74 90 q2 2 4 0 q2 2 4 0 M72 84 q2 2 4 0 q2 2 4 0"/></g>`;
+  g += `<path d="M70 79 Q84 84 87 99 L74 99 Z" fill="rgba(0,0,0,.14)"/><path d="M60 82 L68 82 L72 100 L64 100 Z" fill="rgba(0,0,0,.14)"/>`;
   if (lose) g += `<path d="M20 92 L28 86 L26 96 Z M70 84 L80 90 L72 94 Z" fill="${S.d}" opacity=".9"/>`;
   // ears + head
-  g += `<circle cx="29" cy="48" r="4.5" fill="${a.skin}"/><circle cx="71" cy="48" r="4.5" fill="${a.skin}"/>`;
-  g += `<ellipse cx="50" cy="46" rx="21" ry="24" fill="${a.skin}"/>`;
-  if (a.beard) g += `<path d="M29 48 Q30 75 50 75 Q70 75 71 48 Q68 63 58 64 Q50 60 42 64 Q32 63 29 48 Z" fill="${a.hair}"/>`;
+  g += `<circle cx="29" cy="48" r="4.5" fill="${a.skin}" stroke="${ink}" stroke-width="1.5"/><circle cx="71" cy="48" r="4.5" fill="${a.skin}" stroke="${ink}" stroke-width="1.5"/>`;
+  g += `<ellipse cx="50" cy="46" rx="21" ry="24" fill="${a.skin}" stroke="${ink}" stroke-width="1.8"/>`;
+  g += `<path d="M58 23.5 Q72 32 70.5 50 Q68 66 52 69.8 Q65 61 66 47 Q66 32 58 23.5 Z" fill="rgba(80,30,10,.2)"/>`;
+  g += `<ellipse cx="40" cy="35" rx="8" ry="5" fill="#fff" opacity=".16"/>`;
+  g += `<circle cx="37" cy="56" r="4" fill="#e0604a" opacity=".16"/><circle cx="63" cy="56" r="4" fill="#e0604a" opacity=".16"/>`;
+  g += `<path d="M49 50 Q47 55 50.5 56" stroke="rgba(80,30,10,.45)" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  if (a.beard) g += `<path d="M29 48 Q30 75 50 75 Q70 75 71 48 Q68 63 58 64 Q50 60 42 64 Q32 63 29 48 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
   if (a.freckles) g += `<g fill="#c47a52" opacity=".7"><circle cx="39" cy="54" r=".9"/><circle cx="42" cy="56" r=".9"/><circle cx="37" cy="57" r=".9"/><circle cx="61" cy="54" r=".9"/><circle cx="58" cy="56" r=".9"/><circle cx="63" cy="57" r=".9"/></g>`;
   // cheeks
   if (mood === 'win' || mood === 'power') g += `<circle cx="37" cy="55" r="3.5" fill="#ff6b6b" opacity=".25"/><circle cx="63" cy="55" r="3.5" fill="#ff6b6b" opacity=".25"/>`;
@@ -1260,16 +1376,16 @@ function avatarSVG(id, side, mood){
   else if (mood === 'win') g += `<path d="M39 56 Q50 70 61 56 Z" fill="#4a1616"/><path d="M44 63 Q50 67 56 63 Q50 61 44 63 Z" fill="#e66"/>`;
   else if (lose) g += `<path d="M42 63 Q46 59 50 63 Q54 59 58 63" stroke="${ink}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
   else g += `<path d="M44 59 Q50 ${id==='sable'?65:63} 56 59" stroke="${ink}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  if (a.stache) g += `<path d="M39 58 Q44 52 50 56 Q56 52 61 58 Q56 56 50 58.5 Q44 56 39 58 Z" fill="${a.hair}"/>`;
+  if (a.stache) g += `<path d="M39 58 Q44 52 50 56 Q56 52 61 58 Q56 56 50 58.5 Q44 56 39 58 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
   if (a.glasses) g += `<path d="M33 43 L67 43 L65 51 L35 51 Z" fill="rgba(242,185,59,.32)" stroke="#f2b93b" stroke-width="1.4"/><path d="M36 45 L46 45" stroke="#fff" stroke-width="1" opacity=".7"/>`;
   if (a.paint) g += `<path d="M34 52 L42 52 M58 52 L66 52 M35 55 L40 55 M60 55 L65 55" stroke="#2f7a3a" stroke-width="1.6" stroke-linecap="round"/>`;
   if (a.earrings) g += `<path d="M29 53 L31 56 L29 59 L27 56 Z M71 53 L73 56 L71 59 L69 56 Z" fill="#f2b93b"/>`;
   // hair front
-  if (a.style === 'short') g += `<path d="M29 43 Q27 19 50 18 Q73 19 71 43 Q67 29 50 30 Q35 29 29 43 Z" fill="${a.hair}"/>`;
-  if (a.style === 'spiky') g += `<path d="M28 43 L29 26 L36 30 L39 17 L46 27 L52 13 L57 27 L64 17 L66 30 L72 26 L72 43 Q64 32 50 33 Q36 32 28 43 Z" fill="${a.hair}"/>`;
-  if (a.style === 'bob') g += `<path d="M29 42 Q29 19 50 19 Q71 19 71 42 Q62 30 52 34 Q44 28 29 42 Z" fill="${a.hair}"/>`;
+  if (a.style === 'short') g += `<path d="M29 43 Q27 19 50 18 Q73 19 71 43 Q67 29 50 30 Q35 29 29 43 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (a.style === 'spiky') g += `<path d="M28 43 L29 26 L36 30 L39 17 L46 27 L52 13 L57 27 L64 17 L66 30 L72 26 L72 43 Q64 32 50 33 Q36 32 28 43 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (a.style === 'bob') g += `<path d="M29 42 Q29 19 50 19 Q71 19 71 42 Q62 30 52 34 Q44 28 29 42 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
   if (a.streak) g += `<path d="M58 21 Q68 26 70 40 Q66 31 57 28 Z" fill="#f2b93b" opacity=".85"/>`;
-  if (a.style === 'pony') g += `<path d="M29 41 Q29 19 50 19 Q71 19 71 41 Q58 27 45 32 Q36 34 29 41 Z" fill="${a.hair}"/>`;
+  if (a.style === 'pony') g += `<path d="M29 41 Q29 19 50 19 Q71 19 71 41 Q58 27 45 32 Q36 34 29 41 Z" fill="${a.hair}" stroke="${ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
   if (a.style === 'bald') g += `<ellipse cx="44" cy="28" rx="7" ry="3" fill="#fff" opacity=".15"/>`;
   // headgear
   let hat = '';
