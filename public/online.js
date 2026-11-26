@@ -1,6 +1,6 @@
 "use strict";
 // ============================================================
-// Nullfront — online layer (accounts, records, leaderboard, feedback)
+// Battlemax — online layer (accounts, records, leaderboard, feedback)
 // Talks to Supabase. Everything here is optional: if config is missing or
 // the network fails, the game keeps working offline.
 // ============================================================
