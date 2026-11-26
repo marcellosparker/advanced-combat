@@ -746,8 +746,10 @@ function drawTile(x,y){
   if (TER[ch].prop){
     drawBuilding(ch, t.owner, px, py, T);
     if (t.cap < 20){
-      ctx.fillStyle='#2a180a'; ctx.fillRect(px+2,py+2,T-4,6);
-      ctx.fillStyle='#f2b93b'; ctx.fillRect(px+3,py+3,(T-6)*(20-t.cap)/20,4);
+      // ends before the property badge in the top-right corner
+      const bw = T*.52;
+      ctx.fillStyle='#2a180a'; rr(px+2,py+2,bw,7,3); ctx.fill();
+      ctx.fillStyle='#f2b93b'; ctx.fillRect(px+3.5,py+3.5,(bw-3)*(20-t.cap)/20,4);
     }
   }
   if (!'w~b'.includes(ch)){ ctx.strokeStyle='rgba(40,30,10,.12)'; ctx.lineWidth=1; ctx.strokeRect(px+.5,py+.5,T-1,T-1); }
@@ -861,8 +863,8 @@ function propBadge(t, x, y, R){
 }
 function drawUnit(u, fx, fy){
   const onProp = Number.isInteger(fx) && Number.isInteger(fy) && TER[tile(fx,fy).t].prop;
-  const cx = fx*T + (onProp ? T*.4 : T/2), cy = fy*T + (onProp ? T*.58 : T/2), S = SIDES[u.side];
-  const k = onProp ? .84 : 1;
+  const cx = fx*T + (onProp ? T*.4 : T/2), cy = fy*T + (onProp ? T*.62 : T/2), S = SIDES[u.side];
+  const k = onProp ? .8 : 1;
   const dim = u.acted && u.side === G.turn;
   ctx.save();
   if (dim) ctx.globalAlpha = .55;
