@@ -204,6 +204,41 @@ button.pri{background:linear-gradient(180deg,#ffd46b,#e0a22c);color:#3a2208;box-
 .card.scroll .row{justify-content:center}
 .card.scroll button:not(.pri){background:#efdcae;color:#4a2e14}
 .card.scroll{max-height:none}
+/* everything inside a parchment scroll: dark ink on light paper */
+.card.scroll{color:#3a2208}
+.card.scroll p{max-width:38ch}
+.card.scroll h3{color:#3a2208;font-family:var(--crest);font-weight:900 !important}
+.card.scroll.left .sbody{text-align:left}
+.card.scroll.left h2{text-align:center}
+.card.scroll.left p{max-width:none;margin:6px 0;font-size:14px}
+.card.scroll ul{text-align:left;color:#4a2e14;padding-left:20px;margin:8px 0 14px}
+.card.scroll li{margin:6px 0;line-height:1.45}
+.card.scroll li b{color:#7a1f12}
+.card.scroll .grid button{background:#f8ecc9;color:#3a2208;border:2px solid #8a5a2c !important;box-shadow:0 2px 0 #8a5a2c;border-radius:8px}
+.card.scroll .grid button:hover:not(:disabled){background:#fff4d8;border-color:#2a180a !important}
+.card.scroll .grid button span{font-family:var(--crest);font-weight:900;font-size:15px}
+.card.scroll .grid small{color:#5a3a1c}
+.card.scroll .grid button:disabled{opacity:.45}
+.card.scroll .form{text-align:left}
+.card.scroll .form label{color:#3a2208}
+.card.scroll .form label small{color:#7a5a36}
+.card.scroll .form input,.card.scroll .form select,.card.scroll .form textarea{background:#fffaf0;color:#2a180a;border:2px solid #a8743c}
+.card.scroll .form input:focus,.card.scroll .form select:focus,.card.scroll .form textarea:focus{outline:2px solid #7a1f12}
+.card.scroll .pwEye{color:#7a1f12}
+.card.scroll .aMsg.bad{color:#b3261e}.card.scroll .aMsg.ok{color:#2f7a3a}
+.card.scroll .linkish{color:#7a1f12;box-shadow:none;border:0 !important}
+.card.scroll .tabs button{background:#efdcae;color:#4a2e14}
+.card.scroll .tabs button.on{background:linear-gradient(180deg,#ffd46b,#e0a22c);color:#3a2208}
+.card.scroll .kpis div{background:#f8ecc9;border:2px solid #c9a565}
+.card.scroll .kpis b{color:#3a2208}.card.scroll .kpis small{color:#7a5a36}
+.card.scroll .hist,.card.scroll .lb{text-align:left}
+.card.scroll .hrow,.card.scroll .lrow{background:#f8ecc9;border:2px solid #c9a565;color:#3a2208}
+.card.scroll .hrow .mid small{color:#7a5a36}
+.card.scroll .hrow.w .res{background:#2f7a3a;color:#fff}.card.scroll .hrow.l .res{background:#a5482f;color:#fff}
+.card.scroll .lhead{color:#7a4a16;text-align:left}
+.card.scroll .lrow .pos{color:#7a4a16}
+.card.scroll .lrow.me{border-color:#7a1f12;background:#fff4d8}
+
 .card.scroll .mtitle{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 4px}
 .card.scroll .mtitle svg{flex:none}
 .card.scroll .mtitle .wm{font-family:var(--crest);font-weight:900;font-size:30px;line-height:1;color:#3a2208;letter-spacing:.03em}
@@ -1536,18 +1571,18 @@ function showVictory(){
 $('pwr').addEventListener('click', () => { if (fxSkip) fxSkip(); });
 
 // ---------- MODALS ----------
-function modal(html, solid, look){ $('card').innerHTML = look === 'scroll' ? `<div class="sbody">${html}</div>` : html; $('card').className = 'card' + (look ? ' ' + look : ''); $('modal').classList.toggle('solid', !!solid); $('modal').classList.remove('hide'); }
+function modal(html, solid, look){ look = look || 'scroll'; const sc = look.split(' ').includes('scroll'); $('card').innerHTML = sc ? `<div class="sbody">${html}</div>` : html; $('card').className = 'card ' + look; $('modal').classList.toggle('solid', !!solid); $('modal').classList.remove('hide'); }
 function closeModal(){ $('modal').classList.add('hide'); $('modal').classList.remove('solid'); $('card').className = 'card'; }
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal' && G && !G.over && !$('modal').classList.contains('solid') && !$('modal').dataset.lock) closeModal(); });
 function openBuild(x,y){
   const s = G.turn, f = G.funds[s];
-  let h = `<h2>Build at factory</h2><p>Funds: <b style="color:#ffffff">${f.toLocaleString()} G</b>. New units can act next turn.</p><div class="grid">`;
+  let h = `<h2>Build at factory</h2><p>Funds: <b>${f.toLocaleString()} G</b>. New units can act next turn.</p><div class="grid">`;
   for (const t of ['rifle','rocket','scout','howitzer','tank','flak','gunship','heavy']){
     const d = U[t], c = costOf(s,t);
     h += `<button data-t="${t}" ${c>f?'disabled':''}><span>${d.n}</span><small>${c.toLocaleString()} G · Mv ${d.mv}</small><small>${d.d}</small></button>`;
   }
   h += `</div><div class="row"><button id="mClose">Cancel</button></div>`;
-  modal(h);
+  modal(h, false, 'scroll left');
   $('card').querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
     const t = b.dataset.t;
     G.funds[s] -= costOf(s,t); stat(s).built++; stat(s).spent += costOf(s,t);
@@ -1565,13 +1600,13 @@ function coInfo(s){
   let h = '';
   for (const side of ['red','blue']){
     const c = coOf(side);
-    h += `<div style="display:flex;gap:10px;align-items:center;margin-top:10px">${avatarBox(G.co[side], side, G.power[side]?'power':'idle', 56)}<h3 style="color:${SIDES[side].c};margin:0">${SIDES[side].n} — ${c.n} (${c.tag})${G.power[side] ? ' · ⚡ ' + c[G.power[side]].n + ' active' : ''}</h3></div>
-      <p>${c.d2d}</p><p><b style="color:#ffffff">${c.cop.n}</b> — ${Math.ceil(powerCost(side,'cop')).toLocaleString()} charge: ${c.cop.d}</p>
-      <p><b style="color:#ffffff">${c.scop.n}</b> — ${Math.ceil(powerCost(side,'scop')).toLocaleString()} charge: ${c.scop.d}</p>
+    h += `<div style="display:flex;gap:10px;align-items:center;margin-top:10px">${avatarBox(G.co[side], side, G.power[side]?'power':'idle', 56)}<h3 style="color:${SIDES[side].d};margin:0">${SIDES[side].n} — ${c.n} (${c.tag})${G.power[side] ? ' · ⚡ ' + c[G.power[side]].n + ' active' : ''}</h3></div>
+      <p>${c.d2d}</p><p><b>${c.cop.n}</b> — ${Math.ceil(powerCost(side,'cop')).toLocaleString()} charge: ${c.cop.d}</p>
+      <p><b>${c.scop.n}</b> — ${Math.ceil(powerCost(side,'scop')).toLocaleString()} charge: ${c.scop.d}</p>
       <p>Meter: ${Math.floor(G.meter[side]).toLocaleString()} / ${Math.ceil(powerCost(side,'scop')).toLocaleString()} (the tick on the bar marks the smaller power)</p>`;
   }
   h += `<p style="margin-top:10px">Meters fill from damage: full value for damage taken, half for damage dealt. Any power also gives +10% attack and defense until that side’s next turn. Each use makes the next power cost 20% more.</p><div class="row"><button class="pri" id="mClose">Close</button></div>`;
-  modal('<h2>Commanders</h2>' + h);
+  modal('<h2>Commanders</h2>' + h, false, 'scroll left');
   $('mClose').onclick = closeModal;
 }
 function confirmEnd(){
@@ -1588,7 +1623,7 @@ function confirmEnd(){
 }
 function confirmPower(s, k){
   const c = coOf(s), p = c[k];
-  modal(`<div style="display:flex;gap:12px;align-items:center">${avatarBox(G.co[s], s, 'power', 64)}<h2 style="margin:0">⚡ ${p.n}</h2></div><p>${p.d}</p><p>Also +10% attack and defense for all your units until your next turn.</p>
+  modal(`<div style="display:flex;gap:12px;align-items:center;justify-content:center">${avatarBox(G.co[s], s, 'power', 64)}<h2 style="margin:0">⚡ ${p.n}</h2></div><p>${p.d}</p><p>Also +10% attack and defense for all your units until your next turn.</p>
     <div class="row"><button class="pow" id="mGo">Activate</button><button id="mClose">Cancel</button></div>`);
   $('mGo').onclick = () => { closeModal(); ui = {mode:'idle'}; activate(s,k); };
   $('mClose').onclick = closeModal;
@@ -1649,12 +1684,12 @@ function help(){
   <li><b>Commanders</b> give a passive bonus and two powers. The meter (stars under each name) fills as you deal and take damage. Tap a commander bar for details.</li>
   <li><b>Fog of war</b> (optional): you only see what your units and properties can see. Forests hide ground units unless you’re adjacent. Mountains give foot units +3 vision. Moving into a hidden enemy stops you — trap!</li>
   <li><b>Tip:</b> tap an enemy to see where it can strike next turn.</li>
-  </ul><div class="row"><button class="pri" id="mBack">Back</button></div>`);
+  </ul><div class="row"><button class="pri" id="mBack">Back</button></div>`, false, 'scroll left');
   $('mBack').onclick = openMenu;
 }
 function passScreen(){
   const s = G.turn;
-  modal(`<h2 style="color:${SIDES[s].c}">${SIDES[s].n}’s turn</h2><p>Day ${G.day}. Pass the phone.</p><div class="row"><button class="pri" id="mGo">Start turn</button></div>`, true);
+  modal(`<h2 style="color:${SIDES[s].d}">${SIDES[s].n}’s turn</h2><p>Day ${G.day}. Pass the phone.</p><div class="row"><button class="pri" id="mGo">Start turn</button></div>`, true);
   $('mGo').onclick = closeModal;
 }
 function gameOver(){
