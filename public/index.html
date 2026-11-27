@@ -200,6 +200,18 @@ header .brand span{display:inline !important}
 .gstat .ggold{display:flex;align-items:center;gap:5px;font-family:var(--disp);font-size:14px;color:#f2b93b;white-space:nowrap;line-height:1.1}
 .gstat .dot{width:9px;height:9px;border:1.5px solid #2a180a}
 .co.turn{border-color:#c8902e !important;box-shadow:0 0 0 1px #f2b93b inset,0 3px 0 #2a180a}
+/* game-info boxes on light parchment for readability */
+#panel,.co,.gstat{background:radial-gradient(ellipse at 50% 40%,#fbf0d2 0,#f2dfb0 75%,#e8cf96 100%) !important;border:2px solid #2a180a !important;box-shadow:inset 0 0 0 1px #c9a565,0 3px 0 #2a180a !important}
+#info{color:#4a2e14}
+#info b{color:#2a180a}
+.co .nm{color:#2a180a}
+.co .tg{color:#7a5a36}
+.co.turn{box-shadow:inset 0 0 0 2px #f2b93b,0 0 0 2px #c8902e,0 3px 0 #2a180a !important}
+.co.pw{box-shadow:inset 0 0 0 2px #d8402e,0 3px 0 #2a180a !important}
+.co .meter{background:#d9c08a;border:1.5px solid #6b4526}
+.co .meter b{background:#2a180a}
+.gstat .gday{color:#2a180a}
+.gstat .ggold{color:#8a5a10}
 @media (max-width:480px){.gstat{min-width:62px;padding:3px 5px}.gstat .gday{font-size:13px}.gstat .ggold{font-size:12px;gap:4px}.co .tg{display:none}header .brand{font-size:19px}}
 
 /* parchment scroll dialog */
@@ -1092,7 +1104,7 @@ function tileInfo(x,y){
 }
 function unitInfo(u){
   const d = U[u.type], r = rangeOf(u);
-  return `<b style="color:${SIDES[u.side].c}">${d.n}</b> · ${disp(u.hp)}/10 HP · Move ${mvOf(u)} · Range ${r[0]===r[1]?r[0]:r.join('–')} · Atk ${atkOf(u)}% — ${d.d}`;
+  return `<b style="color:${SIDES[u.side].d}">${d.n}</b> · ${disp(u.hp)}/10 HP · Move ${mvOf(u)} · Range ${r[0]===r[1]?r[0]:r.join('–')} · Atk ${atkOf(u)}% — ${d.d}`;
 }
 function updatePanel(){
   if (!G) return;
