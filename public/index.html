@@ -204,6 +204,24 @@ button.pri{background:linear-gradient(180deg,#ffd46b,#e0a22c);color:#3a2208;box-
 .card.scroll .row{justify-content:center}
 .card.scroll button:not(.pri){background:#efdcae;color:#4a2e14}
 .card.scroll{max-height:none}
+.card.scroll .mtitle{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 6px}
+.card.scroll .mtitle svg{flex:none}
+.card.scroll .mtitle .wm{font-family:var(--crest);font-weight:900;font-size:30px;line-height:1;color:#3a2208;letter-spacing:.03em}
+.card.scroll .mtitle .wm b{color:#c8902e;font-weight:900;-webkit-text-stroke:.6px #7a4a16}
+.card.scroll .mtitle small{display:block;font-family:var(--crest);font-weight:700;font-size:10px;letter-spacing:.32em;color:#7a4a16;margin-top:5px}
+.card.scroll .optcap{display:flex;align-items:center;gap:10px;margin:14px 0 8px;font-family:var(--crest);font-weight:700;font-size:12px;letter-spacing:.2em;color:#7a4a16;text-transform:uppercase}
+.card.scroll .optcap::before,.card.scroll .optcap::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,#a8743c,transparent)}
+.card.scroll .opts{display:flex;gap:6px}
+.card.scroll button.opt{flex:1 1 auto;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 8px;white-space:nowrap;font-size:13.5px;
+  background:#f8ecc9;color:#5a3a1c;border:2px solid #a8743c !important;box-shadow:0 2px 0 #a8743c;border-radius:20px}
+.card.scroll button.opt .box{width:15px;height:15px;flex:none;border-radius:4px;border:2px solid #7a4a16;background:#fffaf0;position:relative}
+.card.scroll button.opt[aria-checked="true"]{background:#fff6dc;color:#3a2208;border-color:#2a180a !important;box-shadow:0 2px 0 #2a180a}
+.card.scroll button.opt[aria-checked="true"] .box{background:#7a1f12;border-color:#2a180a}
+.card.scroll button.opt[aria-checked="true"] .box::after{content:"";position:absolute;left:28%;top:2%;width:28%;height:58%;border:solid #fff4dc;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.card.scroll .optnote{font-size:12px !important;margin:6px auto 12px !important;color:#7a5a36 !important}
+@media (max-width:480px){.card.scroll{padding:24px 16px 20px}.card.scroll .opts{gap:5px}.card.scroll button.opt{font-size:13px;padding:8px 7px}}
+@media (max-width:380px){.card.scroll button.opt{font-size:12px;gap:4px;padding:8px 5px}.card.scroll button.opt .box{width:13px;height:13px}.card.scroll .mtitle .wm{font-size:25px}.card.scroll .mtitle{gap:8px}}
+
 .card.scroll .sbody{max-height:calc(86vh - 70px);overflow:auto;margin:0 -10px;padding:0 10px;scrollbar-color:#a8743c transparent}
 .card.scroll .grid.one{gap:10px;text-align:left;margin-bottom:14px}
 .card.scroll button[data-co]{background:#f8ecc9;color:#3a2208;border:2px solid #8a5a2c !important;box-shadow:0 2px 0 #8a5a2c;border-radius:8px;padding:10px 12px}
@@ -1575,19 +1593,20 @@ function confirmPower(s, k){
   $('mClose').onclick = closeModal;
 }
 const LOGO = `<div class="logo"><svg width="52" height="57" viewBox="0 0 64 70" aria-hidden="true"><path d="M14 10 50 54M50 10 14 54" stroke="#3a2412" stroke-width="9" stroke-linecap="round"/><path d="M14 10 50 54M50 10 14 54" stroke="#d9dde3" stroke-width="4.5" stroke-linecap="round"/><path d="M10 14h44v22c0 16-10 26-22 31C20 62 10 52 10 36Z" fill="#d8402e" stroke="#3a2412" stroke-width="4" stroke-linejoin="round"/><path d="M15 18h34v17c0 12-7 20-17 24-10-4-17-12-17-24Z" fill="none" stroke="#f2b93b" stroke-width="2.5"/><path d="M22 30l5 4 5-9 5 9 5-4-2 12H24Z" fill="#f2b93b" stroke="#3a2412" stroke-width="2" stroke-linejoin="round"/></svg><div><div class="wm">BATTLE<b>MAX</b></div><small>A TACTICS SAGA</small></div></div>`;
+const shieldSVG = (fill, w) => `<svg width="${w}" height="${Math.round(w*1.12)}" viewBox="0 0 64 72" aria-hidden="true"><path d="M8 8h48v26c0 18-11 29-24 34C19 63 8 52 8 34Z" fill="${fill}" stroke="#2a180a" stroke-width="4" stroke-linejoin="round"/><path d="M14 14h36v19c0 13-8 22-18 26-10-4-18-13-18-26Z" fill="none" stroke="#f2b93b" stroke-width="2.5"/><path d="M21 29l5 4 6-10 6 10 5-4-2 13H23Z" fill="#f2b93b" stroke="#2a180a" stroke-width="2" stroke-linejoin="round"/></svg>`;
+const optBtn = (id, label, on) => `<button class="opt" id="${id}" role="switch" aria-checked="${on}"><span class="box" aria-hidden="true"></span>${label}</button>`;
 function openMenu(){
-  modal(`${LOGO}
+  modal(`<div class="mtitle">${shieldSVG(SIDES.red.c, 40)}<div><div class="wm">BATTLE<b>MAX</b></div><small>A TACTICS SAGA</small></div>${shieldSVG(SIDES.blue.c, 40)}</div>
   <p>Capture cities for income, build an army, pick a commander, and take the enemy HQ — or wipe out every enemy unit.</p>
   <div class="row"><button class="pri" id="mAI">New game vs AI</button><button id="mHot">Two players, one phone</button></div>
-  <div class="row"><button id="mLuck">Luck: ${settings.luck ? 'On' : 'Off'}</button><button id="mFog">Fog of war: ${settings.fog ? 'On' : 'Off'}</button></div>
-  <div class="row"><button id="mAnim">Animations: ${settings.anim ? 'On' : 'Off'}</button></div>
+  <div class="optcap"><span>Options</span></div>
+  <div class="opts">${optBtn('mLuck', 'Luck', settings.luck)}${optBtn('mFog', 'Fog of war', settings.fog)}${optBtn('mAnim', 'Animations', settings.anim)}</div>
+  <p class="optnote">Luck and fog apply to your next new game. Animations change right away.</p>
   <div class="row"><button id="mAcct">Account</button><button id="mBoard">Leaderboard</button></div>
   <div class="row"><button id="mHist">My games</button><button id="mFb">Send feedback</button></div>
-  <div class="row"><button id="mHelp">How to play</button>${G && !G.over ? '<button id="mClose">Resume</button>' : ''}</div>
-  <p style="font-size:12px">Luck and fog apply to the next new game. Animations (battles, powers, victory) change right away.</p>`);
-  $('mLuck').onclick = () => { settings.luck = !settings.luck; saveSettings(); $('mLuck').textContent = 'Luck: ' + (settings.luck ? 'On' : 'Off'); };
-  $('mAnim').onclick = () => { settings.anim = !settings.anim; saveSettings(); $('mAnim').textContent = 'Animations: ' + (settings.anim ? 'On' : 'Off'); };
-  $('mFog').onclick = () => { settings.fog = !settings.fog; saveSettings(); $('mFog').textContent = 'Fog of war: ' + (settings.fog ? 'On' : 'Off'); };
+  <div class="row"><button id="mHelp">How to play</button>${G && !G.over ? '<button id="mClose">Resume</button>' : ''}</div>`, false, 'scroll');
+  const toggle = (id, key) => { $(id).onclick = () => { settings[key] = !settings[key]; saveSettings(); $(id).setAttribute('aria-checked', String(!!settings[key])); }; };
+  toggle('mLuck', 'luck'); toggle('mFog', 'fog'); toggle('mAnim', 'anim');
   $('mAI').onclick = () => pickCOs('ai');
   $('mHot').onclick = () => pickCOs('hot');
   $('mHelp').onclick = help;
