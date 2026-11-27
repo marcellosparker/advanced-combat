@@ -1599,7 +1599,7 @@ const optBtn = (id, label, on) => `<button class="opt" id="${id}" role="switch" 
 function openMenu(){
   modal(`<div class="mtitle">${shieldSVG(SIDES.red.c, 40)}<div class="wm">BATTLE<b>MAX</b></div>${shieldSVG(SIDES.blue.c, 40)}</div><small class="msub">A TACTICS SAGA</small>
   <p>Capture cities for income, build an army, pick a commander, and take the enemy HQ — or wipe out every enemy unit.</p>
-  <div class="row"><button class="pri" id="mAI">New game vs AI</button><button id="mHot">Two players, one phone</button></div>
+  <div class="row"><button class="pri" id="mAI" aria-label="New game vs AI">New game<br>vs AI</button><button id="mHot" aria-label="Two players, one phone">Two players<br>one phone</button></div>
   <div class="optcap"><span>Options</span></div>
   <div class="opts">${optBtn('mLuck', 'Luck', settings.luck)}${optBtn('mFog', 'Fog of war', settings.fog)}${optBtn('mAnim', 'Animations', settings.anim)}</div>
   <p class="optnote">Luck and fog apply to your next new game. Animations change right away.</p>
