@@ -204,11 +204,12 @@ button.pri{background:linear-gradient(180deg,#ffd46b,#e0a22c);color:#3a2208;box-
 .card.scroll .row{justify-content:center}
 .card.scroll button:not(.pri){background:#efdcae;color:#4a2e14}
 .card.scroll{max-height:none}
-.card.scroll .mtitle{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 6px}
+.card.scroll .mtitle{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 4px}
 .card.scroll .mtitle svg{flex:none}
 .card.scroll .mtitle .wm{font-family:var(--crest);font-weight:900;font-size:30px;line-height:1;color:#3a2208;letter-spacing:.03em}
 .card.scroll .mtitle .wm b{color:#c8902e;font-weight:900;-webkit-text-stroke:.6px #7a4a16}
-.card.scroll .mtitle small{display:block;font-family:var(--crest);font-weight:700;font-size:10px;letter-spacing:.32em;color:#7a4a16;margin-top:5px}
+.card.scroll .msub{display:block;text-align:center;font-family:var(--crest);font-weight:700;font-size:10px;letter-spacing:.32em;color:#7a4a16;margin:0 0 8px}
+.card.scroll .mtitle .wm{padding-top:4px}
 .card.scroll .optcap{display:flex;align-items:center;gap:10px;margin:14px 0 8px;font-family:var(--crest);font-weight:700;font-size:12px;letter-spacing:.2em;color:#7a4a16;text-transform:uppercase}
 .card.scroll .optcap::before,.card.scroll .optcap::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,#a8743c,transparent)}
 .card.scroll .opts{display:flex;gap:6px}
@@ -1596,7 +1597,7 @@ const LOGO = `<div class="logo"><svg width="52" height="57" viewBox="0 0 64 70" 
 const shieldSVG = (fill, w) => `<svg width="${w}" height="${Math.round(w*1.12)}" viewBox="0 0 64 72" aria-hidden="true"><path d="M8 8h48v26c0 18-11 29-24 34C19 63 8 52 8 34Z" fill="${fill}" stroke="#2a180a" stroke-width="4" stroke-linejoin="round"/><path d="M14 14h36v19c0 13-8 22-18 26-10-4-18-13-18-26Z" fill="none" stroke="#f2b93b" stroke-width="2.5"/><path d="M21 29l5 4 6-10 6 10 5-4-2 13H23Z" fill="#f2b93b" stroke="#2a180a" stroke-width="2" stroke-linejoin="round"/></svg>`;
 const optBtn = (id, label, on) => `<button class="opt" id="${id}" role="switch" aria-checked="${on}"><span class="box" aria-hidden="true"></span>${label}</button>`;
 function openMenu(){
-  modal(`<div class="mtitle">${shieldSVG(SIDES.red.c, 40)}<div><div class="wm">BATTLE<b>MAX</b></div><small>A TACTICS SAGA</small></div>${shieldSVG(SIDES.blue.c, 40)}</div>
+  modal(`<div class="mtitle">${shieldSVG(SIDES.red.c, 40)}<div class="wm">BATTLE<b>MAX</b></div>${shieldSVG(SIDES.blue.c, 40)}</div><small class="msub">A TACTICS SAGA</small>
   <p>Capture cities for income, build an army, pick a commander, and take the enemy HQ — or wipe out every enemy unit.</p>
   <div class="row"><button class="pri" id="mAI">New game vs AI</button><button id="mHot">Two players, one phone</button></div>
   <div class="optcap"><span>Options</span></div>
