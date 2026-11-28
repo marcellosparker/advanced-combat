@@ -705,6 +705,13 @@ function resize(){
 let anims = [], moving = null, raf = 0;
 function kick(){ if (!raf) raf = requestAnimationFrame(loop); }
 function loop(){ raf = 0; render(); if (anims.length || moving) kick(); }
+// gentle re-render (~12 fps) while the human player has units that can still act, to pulse their rings
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function pulseTick(){
+  if (!reduceMotion && G && !G.over && !busy && !isAI(G.turn) && !raf && !document.hidden && G.units.some(u => u.side === G.turn && !u.acted)) render();
+  setTimeout(pulseTick, 85);
+}
+setTimeout(pulseTick, 500);
 function floatText(x,y,txt,col){ anims.push({k:'txt',x,y,txt,col,t0:performance.now()}); kick(); }
 function boom(x,y){ anims.push({k:'boom',x,y,t0:performance.now()}); kick(); }
 function animateMove(u, path){
@@ -973,19 +980,25 @@ function drawUnit(u, fx, fy){
   const cx = fx*T + (onProp ? T*.4 : T/2), cy = fy*T + (onProp ? T*.62 : T/2), S = SIDES[u.side];
   const k = onProp ? .8 : 1;
   const dim = u.acted && u.side === G.turn;
+  const ready = !u.acted && u.side === G.turn && !isAI(u.side) && !G.over && !(moving && moving.u === u);
   ctx.save();
-  if (dim) ctx.globalAlpha = .8;
+  if (dim) ctx.globalAlpha = .9;
   // painted figure standing on a team-colored pedestal
   const FS = {rifle:2.45, rocket:2.25, scout:1.95, tank:1.72, howitzer:1.9, flak:2.0, gunship:1.95, heavy:2.0};
   const px = cx, py = cy + T*.3, rx = T*.36*k, ry = T*.12*k;
-  if (G.power[u.side]){ ctx.fillStyle = 'rgba(242,185,59,.45)'; ctx.beginPath(); ctx.ellipse(px, py, rx + 4, ry + 3, 0, 0, 7); ctx.fill(); }
-  const ped = ctx.createLinearGradient(0, py - ry, 0, py + ry); ped.addColorStop(0, dim ? '#b5ad9c' : S.c); ped.addColorStop(1, dim ? '#7d7668' : S.d);
+  if (G.power[u.side]){ ctx.fillStyle = 'rgba(255,122,60,.45)'; ctx.beginPath(); ctx.ellipse(px, py, rx + 5, ry + 4, 0, 0, 7); ctx.fill(); }
+  if (ready){                                   // units that can still act: pulsing gold ring
+    const pulse = reduceMotion ? 1 : .5 + .5*Math.sin(performance.now()/260);
+    ctx.fillStyle = `rgba(255,212,107,${.22 + .25*pulse})`; ctx.beginPath(); ctx.ellipse(px, py, rx + 5 + pulse*2, ry + 4 + pulse*1.2, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = `rgba(255,236,170,${.65 + .35*pulse})`; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+  const ped = ctx.createLinearGradient(0, py - ry, 0, py + ry); ped.addColorStop(0, dim ? '#8f897c' : S.c); ped.addColorStop(1, dim ? '#5f5a50' : S.d);
   ctx.fillStyle = '#2a180a'; ctx.beginPath(); ctx.ellipse(px, py + 2, rx, ry, 0, 0, 7); ctx.fill();
   ctx.fillStyle = ped; ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, 7); ctx.fill();
   ctx.strokeStyle = '#2a180a'; ctx.lineWidth = 1.5; ctx.stroke();
   ctx.strokeStyle = dim ? '#d9d2c2' : '#f2b93b'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(px, py - 1, rx - 2.5, ry - 2, 0, Math.PI*1.05, Math.PI*1.95); ctx.stroke();
   const fs = T*k*FS[u.type], lift = U[u.type].air ? T*.14 + Math.sin(performance.now()/300 + u.id)*T*.02 : 0;
-  if (dim) ctx.filter = 'grayscale(.85) brightness(.92)';
+  if (dim) ctx.filter = 'grayscale(1) brightness(.72) contrast(.9)';
   ctx.translate(px, py - fs*.15 - lift);
   if (u.side === 'blue') ctx.scale(-1,1);
   figure(ctx, u.type, fs, u.side, {map:1});
