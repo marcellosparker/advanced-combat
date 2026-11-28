@@ -1389,20 +1389,55 @@ function figure(c, type, s, side, o){
     for (const wx of [-.13,.11]){ circ(wx,.11,.05); fill(lin(wx-.05,.06,wx+.05,.16,[I.wood, I.woodD])); circ(wx,.11,.014); fill(I.steelD); }
     line([[-.18,.06],[-.18,-.12]], I.woodD, .012); P([[-.18,-.12],[-.09,-.1],[-.18,-.07]]); fill(team(-.18,-.12,-.09,-.07));
   }
-  else if (type === 'gunship'){                               // Griffin: lion body, eagle head, flapping wings
-    const flap = o.map ? .3 : Math.sin(t/110), dive = a*.05;
+  else if (type === 'gunship'){                               // Griffin: lion body, eagle head, swept feathered wings
+    const flap = o.map ? .55 : Math.sin(t/110), dive = a*.05, sw = o.map ? 0 : Math.sin(t/240)*.02;
+    const fur = lin(-.2,-.06,.12,.09,['#f6cf6a','#d99a30','#a86a1c']);
+    const fea = lin(.04,-.15,.2,.03,['#ffffff','#f1e6cc','#c9b48a']);
+    const wing = (far) => {
+      const k = (far ? .7 : 1) * (.45 + .55*(.5 + .5*flap));   // wing height follows the flap
+      const ox = far ? .02 : 0, oy = far ? -.01 : 0;
+      const X = (x) => (x + ox)*s, Y = (y) => (y*k + oy - .045*(1-k))*s;
+      const root = [-.0, -.05], wrist = [-.06, -.22], tip = [-.3, -.27], base = [-.15, -.04];
+      c.beginPath(); c.moveTo(X(root[0]), (root[1]+oy)*s);
+      c.quadraticCurveTo(X(.01), Y(-.17), X(wrist[0]), Y(wrist[1]));
+      c.quadraticCurveTo(X(-.16), Y(-.27), X(tip[0]), Y(tip[1]));
+      const n = 6;                                              // scalloped trailing edge, tip → base
+      for (let q=1;q<=n;q++){
+        const fx = tip[0] + (base[0]-tip[0])*q/n, fy = tip[1] + (base[1]-tip[1])*q/n;
+        const px0 = tip[0] + (base[0]-tip[0])*(q-.5)/n, py0 = tip[1] + (base[1]-tip[1])*(q-.5)/n;
+        c.quadraticCurveTo(X(px0 - .045), Y(py0 + .035), X(fx), Y(fy));
+      }
+      c.quadraticCurveTo(X(-.08), (-.03+oy)*s, X(root[0]), (root[1]+oy)*s); c.closePath();
+      fill(lin(-.3,-.27,0,-.04, far ? ['#d6bf92','#9a7a48'] : ['#fffaf0','#ecd7a8','#c9a46a']));
+      c.strokeStyle = far ? 'rgba(42,24,10,.25)' : 'rgba(42,24,10,.38)'; c.lineWidth = lw*.85; c.lineCap = 'round';
+      for (let q=1;q<n;q++){ const fx = tip[0] + (base[0]-tip[0])*q/n, fy = tip[1] + (base[1]-tip[1])*q/n; c.beginPath(); c.moveTo(X(fx), Y(fy)); c.lineTo(X(-.05 - q*.012), Y(-.15 + q*.012)); c.stroke(); }
+      c.beginPath(); c.moveTo(X(root[0]), (root[1]+oy)*s); c.quadraticCurveTo(X(.01), Y(-.17), X(wrist[0]), Y(wrist[1])); c.quadraticCurveTo(X(-.1), Y(-.17), X(-.12), Y(-.09)); c.quadraticCurveTo(X(-.06), Y(-.06), X(root[0]), (root[1]+oy)*s); c.closePath();
+      fill(far ? '#c9a46a' : lin(-.12,-.22,0,-.05,['#f6e2b4','#d9b77a']));
+    };
     c.save(); c.translate(dive*s, dive*.6*s);
-    P([[-.18,.0],[-.27,-.04],[-.24,.0],[-.28,.03],[-.19,.03]]); fill('#c9902e');        // tail tuft
-    for (const lx of [-.12,.06]){ P([[lx-.015,.03],[lx+.015,.03],[lx+.02,.12],[lx-.01,.12]]); fill('#c9902e'); }
-    ell(-.04,.0,.15,.06); fill(lin(-.18,-.06,.1,.06,['#f2c25a','#c9902e']));
-    P([[-.08,-.055],[.04,-.055],[.05,-.0],[-.09,.0]]); fill(team(-.09,-.06,.05,0));       // saddle blanket
-    P([[.05,-.04],[.11,-.12],[.16,-.11],[.13,.01]]); fill('#f6ead0');                   // neck feathers
-    circ(.14,-.12,.045); fill(lin(.1,-.17,.18,-.08,['#ffffff','#e0d6c0']));
-    P([[.175,-.135],[.235,-.115],[.18,-.095]]); fill(I.gold);
-    c.fillStyle = I.ink; circ(.15,-.13,.009); c.fill();
-    const wy = -.05 - flap*.09;
-    P([[-.07,-.04],[-.02,-.05],[.02,-.04],[-.04,wy-.14],[-.12,wy-.18],[-.2,wy-.12],[-.16,wy-.08],[-.21,wy-.05],[-.13,-.02]]); fill(lin(-.2,wy-.18,0,-.03,['#fff6dc','#d9b77a']));
-    c.strokeStyle = 'rgba(42,24,10,.35)'; c.lineWidth = lw*.8; for (const f of [.3,.55,.8]){ c.beginPath(); c.moveTo(-.04*s,-.045*s); c.lineTo((-.04-f*.15)*s,(wy-.14*f)*s); c.stroke(); }
+    wing(true);
+    c.beginPath(); c.moveTo(-.18*s,.0); c.quadraticCurveTo(-.27*s,(.0+sw)*s,-.29*s,(-.07+sw)*s); c.lineWidth = .02*s + lw*2; c.strokeStyle = I.ink; c.lineCap='round'; c.stroke(); c.lineWidth = .02*s; c.strokeStyle = '#d99a30'; c.stroke();
+    P([[-.29,-.07+sw],[-.33,-.11+sw],[-.27,-.11+sw],[-.3,-.15+sw],[-.25,-.09+sw]]); fill('#7a4a22');
+    for (const [lx, g] of [[-.15, .012],[-.09,-.012]]){ P([[lx-.024,.02],[lx+.02,.02],[lx+.016+g,.115],[lx-.02+g,.115]]); fill(fur); ell(lx+g,.122,.03,.016); fill('#d99a30'); }
+    ell(-.05,.02,.155,.06); fill(fur);
+    c.fillStyle = 'rgba(255,255,255,.28)'; ell(-.08,-.01,.08,.016); c.fill();
+    P([[-.11,-.035],[.0,-.035],[.015,.02],[-.005,.05],[-.115,.05],[-.125,.015]]); fill(team(-.12,-.04,.02,.05));
+    c.strokeStyle = I.gold; c.lineWidth = lw*1.1; c.beginPath(); c.moveTo(-.12*s,.04*s); c.lineTo(.0,.04*s); c.stroke();
+    for (const [lx, g] of [[.05,.012],[.09,-.012]]){
+      P([[lx-.017,.03],[lx+.017,.03],[lx+.013+g,.11],[lx-.013+g,.11]]); fill(lin(lx-.02,.03,lx+.02,.11,['#f1e6cc','#c9b48a']));
+      P([[lx-.02+g,.105],[lx+.03+g,.105],[lx+.042+g,.124],[lx+.022+g,.118],[lx+.012+g,.13],[lx+g,.12],[lx-.012+g,.13],[lx-.02+g,.12]]); fill('#f2b93b');
+    }
+    // feathered chest leaning forward into the head
+    P([[.0,-.03],[.06,-.07],[.12,-.1],[.17,-.085],[.16,-.03],[.12,.05],[.04,.06],[-.01,.03]]); fill(fea);
+    c.strokeStyle = 'rgba(42,24,10,.22)'; c.lineWidth = lw*.8;
+    for (const [x,y] of [[.06,-.02],[.1,-.04],[.08,.02],[.12,.0]]){ c.beginPath(); c.arc(x*s,y*s,.02*s,.2,Math.PI-.2); c.stroke(); }
+    P([[.11,-.11],[.07,-.15],[.11,-.14],[.1,-.18],[.14,-.14]]); fill('#f1e6cc');
+    circ(.155,-.1,.048); fill(fea);
+    P([[.19,-.12],[.255,-.105],[.268,-.08],[.248,-.068],[.236,-.085],[.19,-.075]]); fill(lin(.19,-.12,.26,-.07,['#ffd46b','#d99a10']));
+    c.beginPath(); c.moveTo(.195*s,-.094*s); c.lineTo(.238*s,-.088*s); c.lineWidth = lw*.8; c.strokeStyle = I.ink; c.stroke();
+    P([[.15,-.128],[.186,-.12],[.176,-.108]]); fill(I.ink, false);
+    c.fillStyle = '#f2b93b'; circ(.17,-.108,.012); c.fill(); c.fillStyle = I.ink; circ(.172,-.108,.006); c.fill();
+    wing(false);
     c.restore();
   }
   else if (type === 'heavy'){                                 // Golem: carved stone with glowing runes
