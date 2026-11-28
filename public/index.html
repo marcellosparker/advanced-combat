@@ -1558,42 +1558,64 @@ function figure(c, type, s, side, o){
     wing(false);
     c.restore();
   }
-  else if (type === 'heavy'){                                 // Golem: carved stone body, glowing runes, mossy shoulders
-    const lift = a < .5 ? a*2 : (1 - a)*2;
-    const stone = (x0,y0,x1,y1) => lin(x0,y0,x1,y1,['#e0dace','#aaa497','#6f6a60']);
-    const rock = (pts) => { P(pts); fill(stone(pts[0][0],pts[0][1],pts[2][0],pts[2][1])); };
-    const moss = (x,y,w2) => { c.fillStyle = '#5f9e2e'; ell(x,y,w2,w2*.4); c.fill(); c.fillStyle = '#8cc94a'; ell(x-w2*.3,y-w2*.15,w2*.45,w2*.18); c.fill();
-      c.strokeStyle = '#3f7a1c'; c.lineWidth = lw*.8; for (let q=-1;q<=1;q++){ c.beginPath(); c.moveTo((x+q*w2*.5)*s,(y+w2*.2)*s); c.lineTo((x+q*w2*.6)*s,(y+w2*.55)*s); c.stroke(); } };
-    // back arm
-    rock([[-.27,-.1],[-.17,-.12],[-.16,.03],[-.26,.04]]);
-    rock([[-.29,.03],[-.15,.02],[-.14,.1],[-.3,.11]]);
-    // legs
-    rock([[-.13,.08],[-.03,.08],[-.025,.165],[-.14,.165]]); rock([[.02,.08],[.12,.08],[.13,.165],[.015,.165]]);
-    // torso: chunky irregular slab
-    rock([[-.17,-.14],[-.05,-.16],[.12,-.14],[.17,-.05],[.15,.1],[-.02,.12],[-.18,.09],[-.19,-.04]]);
-    c.strokeStyle = 'rgba(42,24,10,.45)'; c.lineWidth = lw; c.beginPath(); c.moveTo(-.12*s,-.13*s); c.lineTo(-.09*s,-.07*s); c.lineTo(-.12*s,-.02*s); c.moveTo(.1*s,.06*s); c.lineTo(.07*s,.1*s); c.moveTo(-.18*s,.03*s); c.lineTo(-.1*s,.05*s); c.stroke();
-    c.fillStyle = 'rgba(255,255,255,.22)'; P([[-.15,-.13],[-.06,-.145],[-.08,-.11],[-.15,-.1]]); c.fill();
-    // glowing runes in team color
-    c.save(); c.shadowColor = S.c; c.shadowBlur = s*.05; c.strokeStyle = S.c; c.lineWidth = Math.max(1.2, s*.012); c.lineCap = 'round';
-    c.beginPath(); c.moveTo(-.02*s,-.1*s); c.lineTo(.03*s,-.06*s); c.lineTo(-.01*s,-.02*s); c.lineTo(.04*s,.02*s); c.moveTo(.07*s,-.09*s); c.lineTo(.07*s,-.03*s); c.moveTo(-.07*s,.02*s); c.lineTo(-.04*s,.05*s); c.lineTo(-.07*s,.08*s); c.stroke();
+  else if (type === 'heavy'){                                 // Golem: hunched boulder giant with glowing seams and crystal core
+    const lift = a < .5 ? a*2 : (1 - a)*2, br = o.map ? 0 : Math.sin(t/420)*.006;
+    const stone = (x0,y0,x1,y1) => lin(x0,y0,x1,y1,['#e6e0d2','#b3ad9f','#7a756a','#5c574e']);
+    const blob = (cx, cy, rx, ry, seed) => {                  // irregular rounded rock
+      c.beginPath();
+      for (let q=0;q<=8;q++){ const an = q/8*Math.PI*2, wob = 1 + .09*Math.sin(an*3 + seed), x = cx + Math.cos(an)*rx*wob, y = cy + Math.sin(an)*ry*wob;
+        if (!q) c.moveTo(x*s,y*s); else { const pa = (q-.5)/8*Math.PI*2; c.quadraticCurveTo((cx+Math.cos(pa)*rx*1.08)*s,(cy+Math.sin(pa)*ry*1.08)*s,x*s,y*s); } }
+      c.closePath(); fill(stone(cx-rx,cy-ry,cx+rx,cy+ry));
+      c.fillStyle = 'rgba(255,255,255,.28)'; ell(cx-rx*.35, cy-ry*.45, rx*.35, ry*.16, -.3); c.fill();
+      c.fillStyle = 'rgba(42,24,10,.22)'; for (let q=0;q<4;q++){ circ(cx + Math.cos(seed+q*1.9)*rx*.5, cy + Math.sin(seed*2+q*1.3)*ry*.45, .006); c.fill(); }
+    };
+    const glowSeam = (pts, wdt) => { c.save(); c.shadowColor = S.c; c.shadowBlur = s*.04; c.strokeStyle = S.c; c.lineWidth = Math.max(1.2, s*(wdt||.011)); c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); pts.forEach(([x,y],i) => i ? c.lineTo(x*s,y*s) : c.moveTo(x*s,y*s)); c.stroke(); c.restore(); };
+    const moss = (x,y,w2) => { c.fillStyle = '#4f8a26'; ell(x,y,w2,w2*.38); c.fill(); c.fillStyle = '#8cc94a'; ell(x-w2*.25,y-w2*.12,w2*.5,w2*.17); c.fill();
+      c.strokeStyle = '#3f7a1c'; c.lineWidth = lw*.8; for (let q=-1;q<=1;q++){ c.beginPath(); c.moveTo((x+q*w2*.45)*s,(y+w2*.2)*s); c.lineTo((x+q*w2*.55)*s,(y+w2*.6)*s); c.stroke(); } };
+    const crystal = (x,y,h2,ang) => { rot(x,y,ang,() => { P([[-.014,0],[-.016,-h2*.75],[0,-h2],[.016,-h2*.75],[.014,0]]); fill(lin(-.02,-h2,.02,0,['#ffffff', S.c, S.d]));
+      c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = lw*.8; c.beginPath(); c.moveTo(-.005*s,-h2*.15*s); c.lineTo(-.006*s,-h2*.75*s); c.stroke(); }); };
+    c.save(); c.translate(0, br*s);
+    // back arm: shoulder, forearm, fist resting low
+    blob(-.2,-.1,.05,.045,1); blob(-.24,-.01,.042,.05,2); blob(-.25,.09,.06,.05,3);
+    glowSeam([[-.215,-.05],[-.23,-.045]]);
+    // stubby boulder legs
+    blob(-.09,.12,.06,.05,4); blob(.06,.12,.06,.05,5);
+    P([[-.15,.15],[-.03,.15],[-.03,.17],[-.15,.17]]); fill('#5c574e'); P([[.0,.15],[.12,.15],[.12,.17],[.0,.17]]); fill('#5c574e');
+    // torso: big hunched boulder with chest plates
+    blob(-.02,-.03,.17,.135,6);
+    c.save(); c.beginPath(); c.ellipse(-.02*s,-.03*s,.165*s,.13*s,0,0,7); c.clip();
+    glowSeam([[-.12,-.12],[-.07,-.05],[-.1,.04],[-.06,.1]]);
+    glowSeam([[.06,-.13],[.02,-.06],[.07,.01],[.03,.09]]);
+    glowSeam([[-.07,-.05],[.02,-.06]], .008); glowSeam([[-.1,.04],[.07,.01]], .008);
     c.restore();
-    // shoulder boulders with moss
-    circ(-.16,-.13,.055); fill(stone(-.21,-.18,-.11,-.08)); moss(-.17,-.175,.04);
-    circ(.13,-.13,.05); fill(stone(.08,-.18,.18,-.08)); moss(.14,-.172,.035);
-    // head sunk between shoulders: brow ridge and glowing eyes
-    rock([[-.07,-.26],[.07,-.26],[.085,-.15],[-.08,-.15]]);
-    P([[-.075,-.225],[.08,-.225],[.075,-.205],[-.07,-.205]]); fill('#8f897c');
-    c.save(); c.shadowColor = S.c; c.shadowBlur = s*.07; c.fillStyle = S.c;
-    P([[-.05,-.2],[-.012,-.2],[-.018,-.185],[-.045,-.185]]); c.fill(); P([[.02,-.2],[.058,-.2],[.052,-.185],[.025,-.185]]); c.fill();
-    c.fillStyle = '#fff'; c.fillRect(-.036*s,-.197*s,.01*s,.007*s); c.fillRect(.034*s,-.197*s,.01*s,.007*s); c.restore();
-    c.strokeStyle = 'rgba(42,24,10,.5)'; c.lineWidth = lw; c.beginPath(); c.moveTo(-.03*s,-.165*s); c.lineTo(.03*s,-.165*s); c.stroke();
-    moss(.02,-.262,.03);
-    // front arm: raises and slams
-    rot(.16,-.1, -lift*1.7, () => {
-      rock([[-.02,-.02],[.09,-.03],[.1,.1],[.0,.11]]);
-      rock([[-.03,.1],[.13,.09],[.15,.2],[-.04,.21]]);
-      c.strokeStyle = 'rgba(42,24,10,.45)'; c.lineWidth = lw; for (const fx of [.02,.06,.1]){ c.beginPath(); c.moveTo(fx*s,.11*s); c.lineTo(fx*s,.2*s); c.stroke(); }
+    // glowing crystal core in the chest
+    c.save(); c.shadowColor = S.c; c.shadowBlur = s*.08; P([[-.025,-.02],[0,-.06],[.025,-.02],[0,.02]]); c.fillStyle = S.c; c.fill(); c.restore();
+    P([[-.025,-.02],[0,-.06],[.025,-.02],[0,.02]]); fill(lin(-.03,-.06,.03,.02,['#ffffff', S.c, S.d]));
+    // shoulders: crystal growth behind, moss in front
+    crystal(-.14,-.13,.07,-.5); crystal(-.115,-.14,.095,-.2); crystal(-.09,-.14,.06,.15);
+    blob(.1,-.13,.055,.045,7); moss(.1,-.17,.04);
+    // head: hunched forward, heavy brow, glowing eyes, jaw
+    blob(.09,-.19,.065,.05,8);
+    P([[.03,-.215],[.15,-.225],[.155,-.2],[.035,-.195]]); fill(lin(.03,-.23,.15,-.19,['#b3ad9f','#6f6a60']));
+    c.save(); c.shadowColor = S.c; c.shadowBlur = s*.06; c.fillStyle = S.c;
+    P([[.07,-.193],[.1,-.195],[.097,-.181],[.072,-.181]]); c.fill(); P([[.115,-.196],[.143,-.198],[.14,-.184],[.117,-.183]]); c.fill(); c.restore();
+    c.fillStyle = '#fff'; c.fillRect(.08*s,-.19*s,.008*s,.005*s); c.fillRect(.124*s,-.192*s,.008*s,.005*s);
+    P([[.06,-.165],[.15,-.17],[.145,-.145],[.07,-.142]]); fill(stone(.06,-.17,.15,-.14));
+    c.strokeStyle = 'rgba(42,24,10,.5)'; c.lineWidth = lw; c.beginPath(); c.moveTo(.08*s,-.16*s); c.lineTo(.135*s,-.163*s); c.stroke();
+    moss(.07,-.235,.025);
+    // front arm: shoulder, upper arm, forearm and huge fist — raises and slams
+    rot(.15,-.11, -lift*1.7, () => {
+      blob(.02,.0,.045,.045,9); blob(.05,.07,.04,.045,10);
+      glowSeam([[.03,.035],[.055,.03]]);
+      blob(.07,.165,.075,.06,11);
+      c.strokeStyle = 'rgba(42,24,10,.5)'; c.lineWidth = lw; for (const fx of [.04,.07,.1]){ c.beginPath(); c.moveTo(fx*s,.13*s); c.lineTo((fx+.005)*s,.165*s); c.stroke(); }
     });
+    blob(.14,-.1,.05,.045,12);
+    // pebbles orbiting the golem in battle
+    if (!o.map) for (let q=0;q<3;q++){ const an = t/600 + q*2.1, px = -.02 + Math.cos(an)*.22, py = -.08 + Math.sin(an)*.06 - .04;
+      circ(px, py, .014 + q*.003); fill(stone(px-.02,py-.02,px+.02,py+.02)); }
+    c.restore();
   }
   c.restore();
 }
