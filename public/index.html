@@ -212,6 +212,15 @@ header .brand span{display:inline !important}
 .co .meter b{background:#2a180a}
 .gstat .gday{color:#2a180a}
 .gstat .ggold{color:#8a5a10}
+/* painted portraits */
+.pimg{display:block;width:100%;height:100%;object-fit:contain;-webkit-user-drag:none;user-select:none}
+.av{position:relative;background-clip:padding-box}
+.av .pimg{position:absolute;left:-14%;top:-6%;width:128%;height:128%}
+.av:has(.pimg.power){box-shadow:0 0 0 2px #f2b93b,0 0 10px #f2b93baa}
+#pwr .pav .pimg{filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
+#vic .vwin .pimg,#vic .vlose .pimg{height:auto;aspect-ratio:1}
+#vic .vlose{filter:brightness(.92) !important}
+#vic .vwin .pimg{filter:drop-shadow(0 0 18px rgba(242,185,59,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.35))}
 @media (max-width:480px){.gstat{min-width:62px;padding:3px 5px}.gstat .gday{font-size:13px}.gstat .ggold{font-size:12px;gap:4px}.co .tg{display:none}header .brand{font-size:19px}}
 
 /* parchment scroll dialog */
@@ -286,7 +295,7 @@ header .brand span{display:inline !important}
 .card.scroll .grid.one{gap:10px;text-align:left;margin-bottom:14px}
 .card.scroll button[data-co]{background:#f8ecc9;color:#3a2208;border:2px solid #8a5a2c !important;box-shadow:0 2px 0 #8a5a2c;border-radius:8px;padding:10px 12px}
 .card.scroll button[data-co]:hover{background:#fff4d8;border-color:#2a180a !important}
-.card.scroll button[data-co] small{color:#5a3a1c}
+.card.scroll button[data-co] small{color:#5a3a1c;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant:normal;letter-spacing:0}
 .card.scroll button[data-co] b{color:#7a1f12}
 .card.scroll button[data-co] > span > span > span:first-child{font-family:var(--crest);font-weight:900;font-size:17px;color:#3a2208}
 
@@ -1435,7 +1444,13 @@ const AV = {
   rook:  {skin:'#6b4429', hair:'#2a1d14', style:'bald',  hat:'knight', beard:1},
   sable: {skin:'#efc29a', hair:'#7a3a1a', style:'spiky', hat:'hood', paint:1}
 };
+// Painted portraits (public/portraits/<id>-<idle|win|lose>.webp); the vector drawing below is the fallback.
+const PORTRAIT_MOOD = {idle:'idle', power:'win', win:'win', lose:'lose'};
 function avatarSVG(id, side, mood){
+  if (COS[id] && !avatarSVG.off) return `<img class="pimg ${mood}" src="/portraits/${id}-${PORTRAIT_MOOD[mood] || 'idle'}.webp" alt="" draggable="false" onerror="avatarSVG.off=1;this.outerHTML=avatarVec('${id}','${side}','${mood}')">`;
+  return avatarVec(id, side, mood);
+}
+function avatarVec(id, side, mood){
   mood = mood || 'idle';
   const a = AV[id], S = SIDES[side], ink = '#2a1a14';
   const lose = mood === 'lose';
